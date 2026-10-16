@@ -22,12 +22,12 @@ export function Tour({ onDone }: { onDone: () => void }) {
     }
     el.scrollIntoView({ block: "center", behavior: "smooth" });
     const update = () => setRect(el.getBoundingClientRect());
-    const t = window.setTimeout(update, 350);
+    const t = window.setInterval(update, 150);
     update();
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
     return () => {
-      window.clearTimeout(t);
+      window.clearInterval(t);
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
