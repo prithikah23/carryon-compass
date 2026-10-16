@@ -12,7 +12,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { TopNav, BottomTabs } from "@/components/AppNav";
+import { TopNav } from "@/components/AppNav";
+import { AppFooter } from "@/components/AppFooter";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -80,10 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Carry-On Compass — Pack for every climate in a carry-on" },
-      { name: "description", content: "Plan outfits and a packing list that fits a carry-on and a personal item, with room for souvenirs." },
+      { title: "Carry-On Compass — Will everything fit?" },
+      { name: "description", content: "A packing list that fits two bags, with room for souvenirs." },
       { property: "og:title", content: "Carry-On Compass" },
-      { property: "og:description", content: "A packing list that fits both bags, an outfit for every day, and room to bring things home." },
+      { property: "og:description", content: "A packing list that fits both bags, with room to bring things home." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -127,10 +128,10 @@ function RootComponent() {
         Skip to content
       </a>
       <TopNav />
-      <main id="main" className="pb-24 md:pb-12">
+      <main id="main" className="min-h-[70vh]">
         <Outlet />
       </main>
-      <BottomTabs />
+      <AppFooter />
       <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );

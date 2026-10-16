@@ -1,13 +1,7 @@
-# Roadmap — Carry-On Compass (per uploaded brief)
+# Roadmap — fresh "Will everything fit?" brief
 
-- [x] Data model, sample data, browser storage
-- [x] Rule-based packing + outfit engine (with reasons)
-- [x] Home page, navigation (top / bottom tabs)
-- [x] Wardrobe: list, filter, search, add/edit/delete
-- [x] Trip builder: bags, legs, options (3 steps, validation)
-- [x] Trip plan: verdict, meters, outbound/return, packing list, wear-on-plane, gate-check, liquids, outfits, editing, fixes, checklist
-- [x] Tour + banner, Settings (replay, reset, start fresh, about)
-- [x] Final journey check in a fresh browser
-- [x] Searchable 60-item catalog on Wardrobe and Add item panel
-- [x] Quick-add defaults, quantities, color dots and icons across item displays
-- [x] Short custom form and keyboard navigation; verify complete journey
+- [x] Replace prior screens with Home, one-page setup and packing plan
+- [x] Fresh browser storage, 40-item catalog and deterministic packing rules
+- [x] Meters, souvenir direction toggle, packing actions, search and custom items
+- [x] Confirmed reset/start over, footer limitations and accessible phone layout
+- [x] Test complete fresh-browser journey and packing edge cases

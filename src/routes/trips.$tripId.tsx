@@ -1,672 +1,619 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import {
-  AlertTriangle,
   ArrowLeftRight,
   CheckCircle2,
-  CircleAlert,
-  Droplets,
-  Pencil,
+  AlertTriangle,
   Plane,
   Plus,
   RotateCcw,
-  ShieldCheck,
-  X,
+  Trash2,
+  Search,
+  ArrowRight,
+  Luggage,
+  Backpack,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EmptyState, PageLoading, SampleBadge } from "@/components/common";
-import { MeterBar } from "@/components/plan/Meters";
-import { Tour } from "@/components/plan/Tour";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ItemIcon } from "@/components/ItemIcon";
-import { actions, useAppState } from "@/lib/store";
-import { computePlan, swapKey, type Fix, type PackedEntry, type Plan } from "@/lib/engine";
-import { fmtDay, fmtShort, fmtVolume, fmtWeight } from "@/lib/format";
-import { bagLabel, CATEGORIES, categoryPlural, emptyOverrides, otherBag, type BagId, type Item, type Trip } from "@/lib/types";
+import { meta } from "@/components/FitControls";
+import {
+  findItems,
+  freshSample,
+  totals,
+  suggestedRemovals,
+  type PackingTrip,
+  type PackItem,
+} from "@/lib/packing";
+import { usePackingState, savePackingTrip } from "@/lib/packing-store";
+import { fmtWeight, fmtVolume } from "@/lib/format";
+import { CATEGORIES, bagLabel, type BagId, type Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
 export const Route = createFileRoute("/trips/$tripId")({
-  head: () => ({
-    meta: [
-      { title: "Trip plan — Carry-On Compass" },
-      { name: "description", content: "Do your bags fit? Packing list, daily outfits, gate-check backup and liquids check for your trip." },
-      { property: "og:title", content: "Trip plan — Carry-On Compass" },
-      { property: "og:description", content: "A packing list that fits both bags, an outfit for every day, and room for souvenirs." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: TripPage,
+  head: () =>
+    meta(
+      "Packing plan",
+      "Will everything fit? Check both bags, keep room for souvenirs and tick off your packing list.",
+    ),
+  component: PlanPage,
 });
-
-function TripPage() {
-  const s = useAppState();
-  const { tripId } = Route.useParams();
-  if (!s.loaded) return <PageLoading />;
-  const trip = s.trips.find((t) => t.id === tripId);
-  if (!trip)
+function PlanPage() {
+  const s = usePackingState();
+  if (!s.loaded)
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12">
-        <EmptyState
-          title="We couldn't find that trip."
-          actions={
-            <>
-              <Button asChild>
-                <Link to="/trips">See your trips</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/settings">Bring back the sample trip</Link>
-              </Button>
-            </>
-          }
-        >
-          It may have been deleted. The sample trip can be restored from Settings.
-        </EmptyState>
+      <div className="mx-auto max-w-5xl p-10" role="status">
+        Loading your trip…
       </div>
     );
-  return <TripPlan trip={trip} items={s.items} tourDone={s.prefs.tourDone} bannerDismissed={s.prefs.bannerDismissed} />;
+  if (!s.trip)
+    return (
+      <div className="mx-auto max-w-3xl px-5 py-14">
+        <h1 className="text-3xl">Your next trip starts here</h1>
+        <Button asChild className="mt-6">
+          <Link to="/trips/new">Plan my trip</Link>
+        </Button>
+      </div>
+    );
+  return <Plan key={s.trip.id} trip={s.trip} />;
 }
-
-function TripPlan({ trip, items, tourDone, bannerDismissed }: { trip: Trip; items: Item[]; tourDone: boolean; bannerDismissed: boolean }) {
-  const plan = useMemo(() => computePlan(trip, items), [trip, items]);
-  const [returning, setReturning] = useState(false);
-  const [tab, setTab] = useState<"plan" | "checklist">("plan");
-  const [addOpen, setAddOpen] = useState(false);
-  const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
-  const showTour = !!trip.sample && !tourDone && plan.entries.length > 0 && tab === "plan";
-
-  const ov = (fn: (o: Trip["overrides"]) => Trip["overrides"]) => actions.patchOverrides(trip.id, fn);
-  const move = (id: string, to: BagId) => {
-    ov((o) => ({ ...o, bagMoves: { ...o.bagMoves, [id]: to } }));
-    toast.success(`Moved ${itemById.get(id)?.name} to your ${bagLabel(to).toLowerCase()}`);
-  };
-  const remove = (id: string) => {
-    ov((o) => ({ ...o, removed: [...new Set([...o.removed, id])], added: o.added.filter((x) => x !== id) }));
-    toast.success(`Removed ${itemById.get(id)?.name} from the list`);
-  };
-  const add = (id: string) => {
-    ov((o) => ({ ...o, added: [...new Set([...o.added, id])], removed: o.removed.filter((x) => x !== id) }));
-    toast.success(`Added ${itemById.get(id)?.name}`);
-  };
-  const applyFix = (f: Fix) => {
-    if (f.action.type === "remove") remove(f.action.itemId);
-    else if (f.action.type === "move") move(f.action.itemId, f.action.to);
-    else {
-      actions.patchTrip(trip.id, (t) => ({ ...t, wearHeaviest: true }));
-      toast.success("Heaviest items will be worn on travel days");
-    }
-  };
-  const restore = () => {
-    actions.patchTrip(trip.id, (t) => ({ ...t, overrides: emptyOverrides() }));
-    toast.success("Recommendation restored");
-  };
-  const endTour = useCallback(() => actions.setPrefs({ tourDone: true }), []);
-
-  const legs = [...trip.legs].sort((a, b) => a.start.localeCompare(b.start));
-
+function Meter({
+  label,
+  used,
+  reserve,
+  limit,
+  unit,
+  returning,
+}: {
+  label: string;
+  used: number;
+  reserve: number;
+  limit: number;
+  unit: "g" | "L";
+  returning: boolean;
+}) {
+  const format = unit === "g" ? fmtWeight : fmtVolume;
+  const over = used + reserve - limit;
+  const status =
+    over > 0.001
+      ? `Over by ${format(over)}`
+      : limit - used - reserve <= limit * 0.1
+        ? "Close to limit"
+        : "Fits";
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      {trip.sample && (
-        <p className="mb-4 rounded-xl bg-warning-soft px-4 py-3 text-foreground">
-          Using sample data.{" "}
-          <Link to="/trips/new" className="font-semibold text-primary underline underline-offset-4">
-            Plan my own trip
-          </Link>
-        </p>
-      )}
-      {trip.sample && tourDone && !bannerDismissed && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-secondary px-4 py-3">
-          <p className="font-medium text-secondary-foreground">
-            Ready to try yours?{" "}
-            <Link to="/trips/new" className="text-primary underline underline-offset-4">
-              Plan my own trip
-            </Link>
-          </p>
-          <Button variant="ghost" size="icon" aria-label="Dismiss" onClick={() => actions.setPrefs({ bannerDismissed: true })}>
-            <X aria-hidden />
-          </Button>
-        </div>
-      )}
-
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold sm:text-3xl">{trip.name}</h1>
-            {trip.sample && <SampleBadge />}
-          </div>
-          {legs.length > 0 && (
-            <p className="mt-1 text-muted-foreground">
-              {fmtShort(legs[0]!.start)} – {fmtShort(legs[legs.length - 1]!.end)} · {plan.days.length} days · {trip.carryOnL} L carry-on + {trip.personalL} L personal item
-            </p>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {plan.modified && (
-            <Button variant="outline" onClick={restore}>
-              <RotateCcw aria-hidden /> Restore recommendation
-            </Button>
-          )}
-          <Button asChild variant="outline">
-            <Link to="/trips/new" search={{ edit: trip.id }}>
-              <Pencil aria-hidden /> Edit trip
-            </Link>
-          </Button>
-        </div>
+    <div>
+      <div className="mb-2 flex flex-wrap justify-between gap-2">
+        <span className="font-medium">{label}</span>
+        <span>
+          {format(used + (returning ? reserve : 0))} / {format(limit)}
+        </span>
       </div>
-
-      <Verdict plan={plan} onFix={applyFix} />
-
-      <div role="tablist" aria-label="View" className="my-6 inline-flex rounded-xl border bg-card p-1">
-        {(["plan", "checklist"] as const).map((t) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
-            className={cn("min-h-11 rounded-lg px-5 font-semibold", tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary")}
-          >
-            {t === "plan" ? "Plan" : "Checklist"}
-          </button>
-        ))}
+      <div
+        role="meter"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={limit}
+        aria-valuenow={used + (returning ? reserve : 0)}
+        aria-valuetext={`${format(used + (returning ? reserve : 0))} used of ${format(limit)}. ${status}. ${format(reserve)} reserved for souvenirs.`}
+        className="flex h-3 overflow-hidden rounded-full bg-muted"
+      >
+        <span
+          className={over > 0 ? "bg-destructive" : "bg-primary"}
+          style={{ width: `${Math.min(100, (used / limit) * 100)}%` }}
+        />
+        <span
+          className={returning ? "bg-accent" : "stripes"}
+          style={{ width: `${Math.max(0, Math.min(100 - (used / limit) * 100, (reserve / limit) * 100))}%` }}
+        />
       </div>
-
-      {tab === "checklist" ? (
-        <Checklist trip={trip} plan={plan} />
-      ) : plan.entries.length === 0 ? (
-        <EmptyState
-          title={plan.days.length ? "Nothing to pack yet." : "This trip has no legs yet."}
-          actions={
-            plan.days.length ? (
-              <Button asChild>
-                <Link to="/wardrobe">Add clothes to your wardrobe</Link>
-              </Button>
-            ) : (
-              <Button asChild>
-                <Link to="/trips/new" search={{ edit: trip.id }}>Add a leg</Link>
-              </Button>
-            )
-          }
-        >
-          {plan.days.length ? "Your wardrobe is empty. Add the clothes you might bring and the plan fills in automatically." : "Add where you're going so we can match outfits to the weather."}
-        </EmptyState>
-      ) : (
-        <div className="space-y-6">
-          <section aria-labelledby="bags-h" className="rounded-2xl border bg-card p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h2 id="bags-h" className="text-xl font-semibold">Your bags</h2>
-              <div data-tour="return" role="radiogroup" aria-label="Direction" className="inline-flex rounded-xl border bg-background p-1">
-                {[
-                  [false, "Outbound"],
-                  [true, "Return"],
-                ].map(([v, label]) => (
-                  <button
-                    key={String(label)}
-                    role="radio"
-                    aria-checked={returning === v}
-                    onClick={() => setReturning(v as boolean)}
-                    className={cn("min-h-11 rounded-lg px-4 font-semibold", returning === v ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-secondary")}
-                  >
-                    {label as string}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <p className="mb-4 text-muted-foreground" aria-live="polite">
-              {returning
-                ? plan.verdict.ok
-                  ? `Coming home with ${fmtWeight(trip.souvenirKg * 1000)} and ${fmtVolume(trip.souvenirL)} of souvenirs: both bags still fit.`
-                  : `With ${fmtWeight(trip.souvenirKg * 1000)} and ${fmtVolume(trip.souvenirL)} of souvenirs, your bags won't fit. Try the fixes above.`
-                : `The striped part is kept empty for souvenirs in your ${bagLabel(trip.souvenirBag).toLowerCase()}.`}
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
-              {(["carryOn", "personal"] as BagId[]).map((b) => (
-                <div key={b} className="space-y-4 rounded-xl border bg-background p-4">
-                  <h3 className="text-lg font-semibold">{bagLabel(b)}</h3>
-                  <MeterBar m={{ ...plan.bags[b].volume, label: "Space" }} returning={returning} />
-                  <MeterBar m={{ ...plan.bags[b].weight, label: "Weight" }} returning={returning} />
-                </div>
-              ))}
-            </div>
-            {plan.combined && (
-              <div className="mt-4 rounded-xl border bg-background p-4">
-                <MeterBar m={plan.combined} returning={returning} />
-              </div>
-            )}
-            <p className="mt-3 text-sm text-muted-foreground">Weights include the empty bags ({trip.carryOnEmptyKg} kg + {trip.personalEmptyKg} kg).</p>
-          </section>
-
-          <WearOnPlane trip={trip} plan={plan} />
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <GateCheck plan={plan} onMove={(id) => move(id, "personal")} />
-            <Liquids plan={plan} />
-          </div>
-
-          <PackingList plan={plan} onMove={move} onRemove={remove} onAdd={() => setAddOpen(true)} />
-
-          <Outfits plan={plan} itemById={itemById} trip={trip} />
-        </div>
-      )}
-
-      <AddItemsDialog open={addOpen} onOpenChange={setAddOpen} items={items} plan={plan} onAdd={add} />
-      {showTour && <Tour onDone={endTour} />}
+      <p
+        className={cn(
+          "mt-2",
+          over > 0 ? "text-destructive" : status === "Fits" ? "text-success" : "text-warning",
+        )}
+      >
+        {status}
+      </p>
     </div>
   );
 }
-
-function Verdict({ plan, onFix }: { plan: Plan; onFix: (f: Fix) => void }) {
+function Plan({ trip }: { trip: PackingTrip }) {
+  const navigate = useNavigate();
+  const [returning, setReturning] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [confirm, setConfirm] = useState<"start" | "sample" | null>(null);
+  const t = totals(trip, returning);
+  const fixes = suggestedRemovals(trip);
+  const fits = !t.overG && !t.overCarryL && !t.overPersonalL;
+  const done = trip.entries.filter((e) => e.packed).length;
+  const patch = (id: string, change: Partial<PackItem>) =>
+    savePackingTrip({
+      ...trip,
+      entries: trip.entries.map((e) => (e.item.id === id ? { ...e, ...change } : e)),
+    });
+  const add = (item: Item, bag: BagId) => {
+    savePackingTrip({
+      ...trip,
+      entries: [
+        ...trip.entries,
+        {
+          item: { ...item, id: crypto.randomUUID() },
+          bag,
+          reason: "Added by you",
+          packed: false,
+          essential: false,
+          impact: 0,
+        },
+      ],
+    });
+    toast.success(`Added ${item.name}`);
+  };
   return (
-    <section
-      data-tour="verdict"
-      aria-live="polite"
-      className={cn("rounded-2xl border-2 p-5", plan.verdict.ok ? "border-success/40 bg-success-soft" : "border-destructive/30 bg-danger-soft")}
-    >
-      <p className={cn("flex items-start gap-3 font-display text-2xl font-semibold sm:text-3xl", plan.verdict.ok ? "text-success" : "text-destructive")}>
-        {plan.verdict.ok ? <CheckCircle2 className="mt-1 size-7 shrink-0" aria-hidden /> : <AlertTriangle className="mt-1 size-7 shrink-0" aria-hidden />}
-        <span>{plan.verdict.text}</span>
-      </p>
-      {plan.fixes.length > 0 && (
-        <ol className="mt-4 space-y-2">
-          {plan.fixes.map((f, i) => (
-            <li key={f.id} className="flex flex-col gap-2 rounded-xl bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-              <span>
-                <span className="mr-2 font-semibold">{i + 1}.</span>
-                {f.text}
-              </span>
-              <Button size="sm" onClick={() => onFix(f)}>
-                {f.action.type === "remove" ? "Remove it" : f.action.type === "move" ? "Move it" : "Turn on"}
-              </Button>
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
-  );
-}
-
-function WearOnPlane({ trip, plan }: { trip: Trip; plan: Plan }) {
-  const worn = plan.entries.filter((e) => e.bag === "worn");
-  return (
-    <section data-tour="plane" aria-labelledby="plane-h" className="rounded-2xl border bg-card p-5">
-      <h2 id="plane-h" className="flex items-center gap-2 text-xl font-semibold">
-        <Plane className="size-5 text-accent" aria-hidden /> Wear on the plane
-      </h2>
-      {trip.wearHeaviest && worn.length ? (
-        <>
-          <p className="mt-1 font-semibold text-success">You save {fmtWeight(plan.planeSavedG)} by wearing these.</p>
-          <p className="text-sm text-muted-foreground">
-            Travel days: {plan.days.filter((d) => d.travel).map((d) => fmtShort(d.date)).join(", ")}
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {worn.map((e) => (
-              <li key={e.item.id} className="flex items-center gap-2 rounded-full border bg-background px-3 py-2">
-                <ItemIcon item={e.item} className="size-6" />
-                {e.item.name} <span className="text-sm text-muted-foreground">{fmtWeight(e.item.weightG)}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-muted-foreground">Wearing your shoes and jacket on travel days keeps them out of your bags.</p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              actions.patchTrip(trip.id, (t) => ({ ...t, wearHeaviest: true }));
-              toast.success("Heaviest items will be worn on travel days");
-            }}
-          >
-            Turn on
-          </Button>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function GateCheck({ plan, onMove }: { plan: Plan; onMove: (id: string) => void }) {
-  const all = plan.gate.every((g) => g.covered);
-  return (
-    <section aria-labelledby="gate-h" className="rounded-2xl border bg-card p-5">
-      <h2 id="gate-h" className="flex items-center gap-2 text-xl font-semibold">
-        <ShieldCheck className="size-5 text-accent" aria-hidden /> If your carry-on gets gate-checked
-      </h2>
-      <p className="mt-1 text-muted-foreground">
-        {all ? "Your personal item has everything for the first day." : "Your personal item is missing a few first-day things."}
-      </p>
-      <ul className="mt-3 space-y-2">
-        {plan.gate.map((g) => (
-          <li key={g.label} className="flex flex-col gap-2 rounded-xl bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="flex items-start gap-2">
-              {g.covered ? (
-                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" aria-label="Covered" />
-              ) : (
-                <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" aria-label="Missing" />
-              )}
-              <span>
-                <span className="font-medium">{g.label}</span>
-                {!g.covered && g.fix && <span className="block text-sm text-muted-foreground">{g.fix}</span>}
-              </span>
-            </span>
-            {!g.covered && g.action && (
-              <Button size="sm" variant="outline" onClick={() => onMove(g.action!.itemId)}>
-                Move it
-              </Button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function Liquids({ plan }: { plan: Plan }) {
-  const { items, totalMl, oversize } = plan.liquids;
-  const pct = Math.min(100, (totalMl / 1000) * 100);
-  return (
-    <section aria-labelledby="liq-h" className="rounded-2xl border bg-card p-5">
-      <h2 id="liq-h" className="flex items-center gap-2 text-xl font-semibold">
-        <Droplets className="size-5 text-accent" aria-hidden /> Liquids check
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">Common airport rule, check your departure airport.</p>
-      {items.length === 0 ? (
-        <p className="mt-3 text-muted-foreground">No liquids packed. Mark toiletries as liquid in your wardrobe to check them here.</p>
-      ) : (
-        <>
-          <div className="mt-4">
-            <div className="mb-1 flex justify-between text-sm">
-              <span className="font-medium">1 L clear bag</span>
-              <span>{totalMl} mL of 1,000 mL</span>
-            </div>
-            <div role="meter" aria-label="Liquids in clear bag" aria-valuemin={0} aria-valuemax={1000} aria-valuenow={totalMl} className="h-3 overflow-hidden rounded-full bg-muted">
-              <div className={cn("h-full", totalMl > 1000 ? "bg-destructive" : "bg-primary")} style={{ width: `${pct}%` }} />
-            </div>
-            <p className={cn("mt-1 text-sm font-semibold", totalMl > 1000 ? "text-destructive" : "text-success")}>
-              {totalMl > 1000 ? `Over by ${totalMl - 1000} mL` : "Fits in one clear bag"}
-            </p>
-          </div>
-          <ul className="mt-3 divide-y">
-            {items.map((i) => {
-              const big = oversize.includes(i);
-              return (
-                <li key={i.id} className="flex items-center justify-between py-2">
-                  <span className="flex items-center gap-2"><ItemIcon item={i} className="size-6" />{i.name}</span>
-                  <span className={cn("text-sm", big ? "font-semibold text-destructive" : "text-muted-foreground")}>
-                    {i.containerMl} mL{big ? " · over 100 mL, check it or decant" : ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      )}
-    </section>
-  );
-}
-
-function PackingList({
-  plan,
-  onMove,
-  onRemove,
-  onAdd,
-}: {
-  plan: Plan;
-  onMove: (id: string, to: BagId) => void;
-  onRemove: (id: string) => void;
-  onAdd: () => void;
-}) {
-  const groups = CATEGORIES.map((c) => ({ c, list: plan.entries.filter((e) => e.item.category === c.value) })).filter((g) => g.list.length);
-  let first = true;
-  return (
-    <section aria-labelledby="pack-h" className="rounded-2xl border bg-card p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-5xl px-5 py-9">
+      <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 id="pack-h" className="text-xl font-semibold">Packing list</h2>
-          <p className="text-muted-foreground">{plan.entries.length} items · every one says why it's here</p>
-        </div>
-        <Button variant="outline" onClick={onAdd}>
-          <Plus aria-hidden /> Add items
-        </Button>
-      </div>
-      <div className="space-y-5">
-        {groups.map(({ c, list }) => (
-          <div key={c.value}>
-            <h3 className="mb-2 font-sans text-sm font-semibold uppercase tracking-wide text-muted-foreground">{categoryPlural(c.value)}</h3>
-            <ul className="space-y-2">
-              {list.map((e) => {
-                const tour = first;
-                first = false;
-                return <PackRow key={e.item.id} e={e} tour={tour} onMove={onMove} onRemove={onRemove} />;
-              })}
-            </ul>
+          <div className="mb-2 flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-semibold sm:text-4xl">Will everything fit?</h1>
+            {trip.sample && (
+              <span className="rounded-md bg-secondary px-3 py-1 font-medium text-primary">
+                Sample trip
+              </span>
+            )}
           </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function PackRow({ e, tour, onMove, onRemove }: { e: PackedEntry; tour: boolean; onMove: (id: string, to: BagId) => void; onRemove: (id: string) => void }) {
-  const bagText = e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag);
-  return (
-    <li data-tour={tour ? "packing" : undefined} className="flex flex-col gap-3 rounded-xl border bg-background p-3 sm:flex-row sm:items-center">
-      <div className="flex min-w-0 flex-1 gap-3">
-        <ItemIcon item={e.item} className="mt-1 size-8" />
-        <div className="min-w-0">
-          <p className="font-semibold">
-            {e.item.name} <span className="font-normal text-muted-foreground">· {fmtWeight(e.item.weightG)} · {fmtVolume(e.item.volumeL)}</span>
-          </p>
-          <p className="text-muted-foreground">{e.reason}</p>
-          <p className="mt-1 text-sm">
-            <span
-              className={cn(
-                "inline-flex rounded-full px-2 py-0.5 font-semibold",
-                e.bag === "personal" ? "bg-secondary text-secondary-foreground" : e.bag === "worn" ? "bg-accent/15 text-foreground" : "bg-muted text-foreground",
-              )}
-            >
-              {bagText}
-            </span>
-            {e.bagReason && e.bag !== "worn" && <span className="ml-2 text-muted-foreground">{e.bagReason}</span>}
+          <p className="text-muted-foreground">
+            {trip.stops.map((l) => `${l.name} · ${l.days} days`).join(" → ")}
           </p>
         </div>
-      </div>
-      <div className="flex shrink-0 gap-2">
-        {e.bag !== "worn" && (
-          <Button size="sm" variant="outline" onClick={() => onMove(e.item.id, otherBag(e.bag as BagId))} aria-label={`Move ${e.item.name} to ${bagLabel(otherBag(e.bag as BagId)).toLowerCase()}`}>
-            <ArrowLeftRight aria-hidden /> Move to other bag
-          </Button>
-        )}
-        <Button size="icon" variant="ghost" onClick={() => onRemove(e.item.id)} aria-label={`Remove ${e.item.name} from list`}>
-          <X aria-hidden />
+        <Button asChild variant="outline">
+          <Link to="/trips/new">
+            Plan my trip
+            <ArrowRight aria-hidden />
+          </Link>
         </Button>
       </div>
-    </li>
-  );
-}
-
-function Outfits({ plan, itemById, trip }: { plan: Plan; itemById: Map<string, Item>; trip: Trip }) {
-  const packed = plan.entries.map((e) => e.item);
-  return (
-    <section aria-labelledby="out-h" className="rounded-2xl border bg-card p-5">
-      <h2 id="out-h" className="text-xl font-semibold">Day-by-day outfits</h2>
-      <p className="mb-4 text-muted-foreground">
-        Only packed items, matched to each day's weather and plans. {trip.laundry ? "Laundry resets wears every 4 days." : "No laundry, so wears are spread out."}
-      </p>
-      <ol className="grid gap-3 md:grid-cols-2">
-        {plan.outfits.map((o) => (
-          <li key={o.day.date} className="rounded-xl border bg-background p-4">
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-sans text-lg font-semibold">
-                {fmtDay(o.day.date)} · {o.day.leg.destination}
-              </h3>
-              {o.day.travel && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-sm font-semibold">
-                  <Plane className="size-3" aria-hidden /> Travel day
-                </span>
-              )}
-            </div>
-            <p className="mb-3 text-sm text-muted-foreground">
-              {o.day.leg.low} to {o.day.leg.high} °C · {o.day.leg.rain === "none" ? "no rain" : `${o.day.leg.rain} rain`} · <span className="capitalize">{o.day.focus}</span>
+      <section
+        className={cn("border-y py-6", fits ? "border-success/30" : "border-destructive/30")}
+        aria-live="polite"
+      >
+        <div className="flex items-start gap-3">
+          {fits ? (
+            <CheckCircle2 className="mt-1 size-7 shrink-0 text-success" aria-hidden />
+          ) : (
+            <AlertTriangle className="mt-1 size-7 shrink-0 text-destructive" aria-hidden />
+          )}
+          <div>
+            <h2
+              className={cn("text-2xl font-semibold", fits ? "text-success" : "text-destructive")}
+            >
+              {fits
+                ? `Your bags fit, with ${fmtWeight(t.spareG)} to spare`
+                : t.overG
+                  ? `You're ${fmtWeight(t.overG)} over. Try removing the items marked below.`
+                  : `You're ${fmtVolume(t.overCarryL || t.overPersonalL)} over in your ${t.overCarryL ? "carry-on" : "personal item"}. Try removing the items marked below.`}
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              {returning
+                ? "Souvenirs are included for the way home."
+                : `${trip.souvenirKg.toFixed(1)} kg kept free for souvenirs on the way home.`}
             </p>
-            <ul className="space-y-2">
-              {o.pieces.map((p, idx) => {
-                const it = itemById.get(p.itemId);
-                if (!it) return null;
-                const options = packed.filter((x) => x.category === it.category);
-                const key = swapKey(o.day.date, o.pieces, idx);
-                const wears = plan.usage.get(it.id) ?? 0;
-                return (
-                  <li key={key} className="flex items-center gap-2">
-                    <ItemIcon item={it} className="size-6" />
-                    <Select
-                      value={it.id}
-                      onValueChange={(v) => {
-                        actions.patchOverrides(trip.id, (ov) => ({ ...ov, outfitSwaps: { ...ov.outfitSwaps, [key]: v } }));
-                        toast.success(`Swapped in ${itemById.get(v)?.name}`);
-                      }}
-                    >
-                      <SelectTrigger className="h-11 flex-1 bg-card" aria-label={`${p.slot} on ${fmtDay(o.day.date)}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.map((x) => (
-                          <SelectItem key={x.id} value={x.id}>
-                            <span className="flex items-center gap-2"><ItemIcon item={x} className="size-5" />{x.name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span className="w-16 shrink-0 text-right text-sm text-muted-foreground">worn {wears}×</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function AddItemsDialog({
-  open,
-  onOpenChange,
-  items,
-  plan,
-  onAdd,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  items: Item[];
-  plan: Plan;
-  onAdd: (id: string) => void;
-}) {
-  const packedIds = new Set(plan.entries.map((e) => e.item.id));
-  const rest = items.filter((i) => !packedIds.has(i.id));
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Add from your wardrobe</DialogTitle>
-          <DialogDescription>The meters and outfits update as soon as you add something.</DialogDescription>
-        </DialogHeader>
-        {rest.length === 0 ? (
-          <p className="text-muted-foreground">
-            Everything in your wardrobe is already packed.{" "}
-            <Link to="/wardrobe" className="text-primary underline">
-              Add more items
-            </Link>
-          </p>
-        ) : (
-          <ul className="divide-y">
-            {rest.map((i) => (
-              <li key={i.id} className="flex items-center justify-between gap-3 py-2">
-                <ItemIcon item={i} className="size-8" />
-                <span>
-                  <span className="font-medium">{i.name}</span>
-                  <span className="block text-sm text-muted-foreground">
-                    {fmtWeight(i.weightG)} · {fmtVolume(i.volumeL)}
-                  </span>
-                </span>
-                <Button size="sm" variant="outline" onClick={() => onAdd(i.id)}>
-                  <Plus aria-hidden /> Add
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Checklist({ trip, plan }: { trip: Trip; plan: Plan }) {
-  const checked = new Set(trip.checked);
-  const total = plan.entries.length;
-  const done = plan.entries.filter((e) => checked.has(e.item.id)).length;
-  const toggle = (id: string, on: boolean) =>
-    actions.patchTrip(trip.id, (t) => ({ ...t, checked: on ? [...new Set([...t.checked, id])] : t.checked.filter((x) => x !== id) }));
-  const groups: { key: PackedEntry["bag"]; label: string }[] = [
-    { key: "carryOn", label: "Carry-on" },
-    { key: "personal", label: "Personal item" },
-    { key: "worn", label: "Wear on the plane" },
-  ];
-  if (!total) return <EmptyState title="Nothing to check off yet.">Add clothes to your wardrobe to get a packing list.</EmptyState>;
-  return (
-    <section aria-labelledby="chk-h" className="rounded-2xl border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="chk-h" className="text-xl font-semibold">Packing checklist</h2>
-        {done > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => actions.patchTrip(trip.id, (t) => ({ ...t, checked: [] }))}>
-            Uncheck all
-          </Button>
-        )}
-      </div>
-      <div className="my-4">
-        <div className="mb-1 flex justify-between text-sm">
-          <span className="font-medium">Packed</span>
-          <span>
-            {done} of {total}
-          </span>
+          </div>
         </div>
-        <Progress value={(done / total) * 100} aria-label={`${done} of ${total} packed`} />
-      </div>
-      {done === total && (
-        <p className="mb-4 flex items-center gap-2 rounded-xl bg-success-soft p-3 font-semibold text-success" role="status">
-          <CheckCircle2 className="size-5" aria-hidden /> All packed. Have a great trip!
-        </p>
+        {!fits && (
+          <p className="mt-3 text-muted-foreground">
+            {t.overCarryL > 0 && `Carry-on space: ${fmtVolume(t.overCarryL)} over. `}
+            {t.overPersonalL > 0 && `Personal item space: ${fmtVolume(t.overPersonalL)} over. `}If
+            removing the marked items isn’t enough, reduce your reserve or choose a larger
+            allowance.
+          </p>
+        )}
+      </section>
+      <section className="py-7">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl">Your two bags</h2>
+          <div
+            className="flex gap-1 rounded-lg border bg-card p-1"
+            role="group"
+            aria-label="Trip direction"
+          >
+            {[false, true].map((v) => (
+              <Button
+                key={String(v)}
+                variant={returning === v ? "secondary" : "ghost"}
+                aria-pressed={returning === v}
+                onClick={() => setReturning(v)}
+              >
+                {v ? "Return" : "Outbound"}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-8 sm:grid-cols-2">
+          {(["carryOn", "personal"] as const).map((b) => (
+            <div key={b}>
+              <h3 className="mb-4 flex items-center gap-2 font-sans text-xl font-semibold">
+                {b === "carryOn" ? (
+                  <Luggage className="size-5 text-accent" aria-hidden />
+                ) : (
+                  <Backpack className="size-5 text-accent" aria-hidden />
+                )}
+                {bagLabel(b)}
+              </h3>
+              <div className="space-y-4">
+                <Meter
+                  label={`${bagLabel(b)} space`}
+                  used={t.bags[b].l}
+                  reserve={b === "carryOn" ? t.reserveL : 0}
+                  limit={b === "carryOn" ? trip.carryOnL : trip.personalL}
+                  unit="L"
+                  returning={returning}
+                />
+                <p className="flex justify-between">
+                  <span>Weight</span>
+                  <span>
+                    {fmtWeight(t.bags[b].g + (b === "carryOn" && returning ? t.reserveG : 0))}
+                  </span>
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 border-t pt-5">
+          <Meter
+            label="Combined weight"
+            used={t.usedG - (returning ? t.reserveG : 0)}
+            reserve={t.reserveG}
+            limit={trip.limitKg * 1000}
+            unit="g"
+            returning={returning}
+          />
+          <p className="mt-3 text-muted-foreground">
+            {returning ? "Souvenir space is filled." : "Striped space is saved for souvenirs."}{" "}
+            Reserve: {trip.souvenirKg.toFixed(1)} kg · {fmtVolume(t.reserveL)}. Weight allowance is
+            shared by both bags.
+          </p>
+        </div>
+      </section>
+      {t.wornG > 0 && (
+        <section className="border-y bg-secondary/40 px-4 py-5">
+          <h2 className="flex items-center gap-2 text-xl">
+            <Plane className="size-5 text-primary" aria-hidden />
+            Wear on the plane
+          </h2>
+          <p className="mt-2 text-success">You save {fmtWeight(t.wornG)} by wearing these.</p>
+          <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-3">
+            {trip.entries
+              .filter((e) => e.bag === "worn")
+              .map((e) => (
+                <li key={e.item.id} className="flex items-center gap-2">
+                  <ItemIcon item={e.item} className="size-7" />
+                  {e.item.name} · {fmtWeight(e.item.weightG)}
+                </li>
+              ))}
+          </ul>
+        </section>
       )}
-      <div className="grid gap-5 md:grid-cols-3">
-        {groups.map((g) => {
-          const list = plan.entries.filter((e) => e.bag === g.key);
+      <section className="py-8">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl">Your packing list</h2>
+            <p className="mt-1 text-muted-foreground" aria-live="polite">
+              {done} of {trip.entries.length} packed
+              {done === trip.entries.length && done > 0 ? " · All packed. Have a great trip!" : ""}
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setAddOpen(true)}>
+            <Plus aria-hidden />
+            Add item
+          </Button>
+        </div>
+        {CATEGORIES.map((c) => {
+          const list = trip.entries.filter((e) => e.item.category === c.value);
           if (!list.length) return null;
           return (
-            <div key={g.key}>
-              <h3 className="mb-2 font-sans text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {g.label} ({list.filter((e) => checked.has(e.item.id)).length}/{list.length})
-              </h3>
-              <ul className="space-y-1">
-                {list.map((e) => {
-                  const id = `chk-${e.item.id}`;
-                  return (
-                    <li key={e.item.id}>
-                      <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-secondary">
-                        <Checkbox id={id} checked={checked.has(e.item.id)} onCheckedChange={(v) => toggle(e.item.id, v === true)} className="size-5" />
-                        <ItemIcon item={e.item} className="size-6" />
-                        <span className={cn(checked.has(e.item.id) && "text-muted-foreground line-through")}>{e.item.name}</span>
-                      </label>
-                    </li>
-                  );
-                })}
+            <div className="mb-6" key={c.value}>
+              <h3 className="mb-2 font-sans font-semibold text-muted-foreground">{c.plural}</h3>
+              <ul className="divide-y">
+                {list.map((e) => (
+                  <li
+                    key={e.item.id}
+                    className={cn("py-4", fixes.includes(e.item.id) && "bg-warning-soft px-3")}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id={e.item.id}
+                        checked={e.packed}
+                        onCheckedChange={(packed) => patch(e.item.id, { packed: packed === true })}
+                        className="mt-2 size-5"
+                      />
+                      <ItemIcon item={e.item} className="mt-1 size-8" />
+                      <div className="min-w-0 flex-1">
+                        <label
+                          htmlFor={e.item.id}
+                          className={cn(
+                            "flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 font-semibold",
+                            e.packed && "line-through text-muted-foreground",
+                          )}
+                        >
+                          {e.item.name}
+                          <span className="font-normal text-muted-foreground">
+                            {fmtWeight(e.item.weightG)}
+                          </span>
+                        </label>
+                        <p className="text-muted-foreground">{e.reason}</p>
+                        <p className="mt-1 font-medium text-primary">
+                          {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
+                        </p>
+                        {fixes.includes(e.item.id) && (
+                          <p className="mt-2 text-warning">
+                            Remove: saves {fmtWeight(e.item.weightG)} and{" "}
+                            {fmtVolume(e.item.volumeL)} ·{" "}
+                            {e.impact === 0
+                              ? "added extra"
+                              : e.impact === 1
+                                ? "needed for only one activity or as a spare"
+                                : "lower-impact spare compared with daily essentials"}
+                          </p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Button
+                            variant="ghost"
+                            className="px-2"
+                            onClick={() => {
+                              const bag = e.bag === "carryOn" ? "personal" : "carryOn";
+                              patch(e.item.id, { bag });
+                              toast.success(
+                                `Moved ${e.item.name} to ${bagLabel(bag).toLowerCase()}`,
+                              );
+                            }}
+                          >
+                            <ArrowLeftRight aria-hidden />
+                            {e.bag === "worn" ? "Pack in carry-on" : "Move to other bag"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="px-2 text-destructive"
+                            onClick={() => {
+                              savePackingTrip({
+                                ...trip,
+                                entries: trip.entries.filter((x) => x.item.id !== e.item.id),
+                              });
+                              toast.success(`Removed ${e.item.name}`);
+                            }}
+                          >
+                            <Trash2 aria-hidden />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </div>
           );
         })}
+      </section>
+      <div className="flex flex-wrap gap-3 border-t pt-5">
+        <Button variant="outline" onClick={() => setConfirm("start")}>
+          Start over
+        </Button>
+        <Button variant="outline" onClick={() => setConfirm("sample")}>
+          <RotateCcw aria-hidden />
+          Reset sample trip
+        </Button>
       </div>
-    </section>
+      <AddDialog open={addOpen} onOpenChange={setAddOpen} onAdd={add} />
+      <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{confirm === "start" ? "Start over?" : "Reset sample trip?"}</DialogTitle>
+            <DialogDescription className="text-base">
+              Your current packing changes and checked items will be replaced.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (confirm === "start") {
+                  savePackingTrip(null);
+                  toast.success("Ready for a new trip");
+                  navigate({ to: "/trips/new" });
+                } else {
+                  savePackingTrip(freshSample());
+                  setReturning(false);
+                  toast.success("Sample trip reset");
+                  navigate({ to: "/trips/$tripId", params: { tripId: "sample-trip" } });
+                }
+                setConfirm(null);
+              }}
+            >
+              {confirm === "start" ? "Start over" : "Reset sample trip"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+function AddDialog({
+  open,
+  onOpenChange,
+  onAdd,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onAdd: (i: Item, b: BagId) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [custom, setCustom] = useState(false);
+  const [name, setName] = useState("");
+  const [weight, setWeight] = useState("");
+  const [bag, setBag] = useState<BagId>("carryOn");
+  const [error, setError] = useState("");
+  const results = findItems(query);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          setCustom(false);
+          setQuery("");
+          setError("");
+        }
+        onOpenChange(v);
+      }}
+    >
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Add item</DialogTitle>
+          <DialogDescription className="text-base">
+            Travel essentials and typical weights.
+          </DialogDescription>
+        </DialogHeader>
+        <Label htmlFor="add-search">Search items</Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-3 size-5 text-muted-foreground" aria-hidden />
+          <Input
+            id="add-search"
+            type="search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setCustom(false);
+            }}
+            placeholder="Try jacket, pants or shoes"
+            className="pl-10"
+          />
+        </div>
+        <Label htmlFor="add-bag">Bag</Label>
+        <Select value={bag} onValueChange={(v) => setBag(v as BagId)}>
+          <SelectTrigger id="add-bag">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="carryOn">Carry-on</SelectItem>
+            <SelectItem value="personal">Personal item</SelectItem>
+          </SelectContent>
+        </Select>
+        {!custom && (
+          <>
+            <ul className="divide-y">
+              {results.map((i) => (
+                <li key={i.id}>
+                  <Button
+                    variant="ghost"
+                    className="h-auto min-h-16 w-full justify-start whitespace-normal text-left"
+                    aria-label={`Add ${i.name}, ${i.weightG} g`}
+                    onClick={() => onAdd(i, bag)}
+                  >
+                    <ItemIcon item={i} className="size-8" />
+                    <span className="flex-1">
+                      {i.name}
+                      <span className="block font-normal text-muted-foreground">
+                        {fmtWeight(i.weightG)}
+                      </span>
+                    </span>
+                    <Plus aria-hidden />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            {!results.length && <p>No matching essentials.</p>}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCustom(true);
+                setName(query);
+              }}
+            >
+              Add as custom item
+            </Button>
+          </>
+        )}
+        {custom && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const w = Number(weight);
+              if (!name.trim() || !Number.isFinite(w) || w < 1 || w > 10000) {
+                setError("Enter a name and a weight from 1 to 10,000 g.");
+                return;
+              }
+              onAdd(
+                {
+                  id: crypto.randomUUID(),
+                  name: name.trim(),
+                  weightG: w,
+                  volumeL: Math.max(0.05, w / 300),
+                  category: "accessory",
+                  warmth: "light",
+                  formality: "casual",
+                  suitable: ["city"],
+                  maxWears: 99,
+                  color: "#476b75",
+                },
+                bag,
+              );
+              setCustom(false);
+              setQuery("");
+              setWeight("");
+              setError("");
+            }}
+            className="space-y-3"
+          >
+            <div>
+              <Label htmlFor="custom-name">Name</Label>
+              <Input
+                id="custom-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={60}
+              />
+            </div>
+            <div>
+              <Label htmlFor="custom-weight">Weight (g)</Label>
+              <Input
+                id="custom-weight"
+                inputMode="numeric"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+              />
+            </div>
+            <p className="text-muted-foreground">
+              Volume estimated from weight:{" "}
+              {weight && Number(weight) > 0
+                ? fmtVolume(Math.max(0.05, Number(weight) / 300))
+                : "0 L"}
+              .
+            </p>
+            {error && (
+              <p role="alert" className="text-destructive">
+                {error}
+              </p>
+            )}
+            <Button type="submit">Add item</Button>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
