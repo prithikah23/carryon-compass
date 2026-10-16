@@ -11,9 +11,9 @@
 
 # Project rules
 
-- All app data lives in browser localStorage via `src/lib/store.ts` (try/catch, fallback to memory). Why: brief forbids backend/accounts.
+- Active app data lives in browser localStorage via `src/lib/packing-store.ts` (try/catch, fallback to memory); a new versioned key isolates the fresh brief from prior app data.
 - Store is read only after hydration (useSyncExternalStore with an "unloaded" server snapshot); pages render a skeleton until loaded. Why: avoids SSR hydration mismatches.
-- Packing/outfit logic is a pure deterministic module `src/lib/engine.ts`; UI never duplicates its rules. Why: testable, consistent reasons everywhere.
-- User edits to a recommendation are stored as `trip.overrides` on top of the computed plan, so "Restore recommendation" just clears them.
-- Catalog defaults and synonym matching live in a pure catalog module; repeated additions are separate Item records linked by catalogId so existing per-item packing rules remain accurate.
+- Packing selection, bag assignment, totals and removal suggestions live in the pure `src/lib/packing.ts` module; UI does not duplicate rules.
+- The active app has only home, one-page trip setup and individual packing plans; packed item edits are saved directly per trip so checklist and bag choices persist.
+- The active travel catalog narrows shared catalog defaults to common essentials and supplements sleepwear, toiletry kit and documents; individual copies represent quantity.
 - A shared ItemIcon renders category/name-specific line illustrations using each item's stored color so wardrobe and trip displays stay consistent.
