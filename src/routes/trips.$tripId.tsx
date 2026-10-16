@@ -734,9 +734,9 @@ function PackingList({
                         title="Move to other bag"
                         onClick={() => {
                           const bag = e.bag === "carryOn" ? "personal" : "carryOn";
-                          patch(last.item.id, { bag });
+                          save(trip.entries.map((x) => (ids.has(x.item.id) ? { ...x, bag } : x)));
                           toast.success(
-                            `Moved ${n > 1 ? "one " : ""}${e.item.name} to ${bagLabel(bag).toLowerCase()}`,
+                            `Moved ${n > 1 ? `all ${n} ` : ""}${e.item.name} to ${bagLabel(bag).toLowerCase()}`,
                           );
                         }}
                       >
