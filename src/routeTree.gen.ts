@@ -10,9 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as WardrobeRouteImport } from './routes/wardrobe'
-import { Route as TripsIndexRouteImport } from './routes/trips.index'
+import { Route as TripsRouteImport } from './routes/trips.'
 import { Route as TripsTripIdRouteImport } from './routes/trips.$tripId'
 import { Route as TripsNewRouteImport } from './routes/trips.new'
 
@@ -21,17 +19,7 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WardrobeRoute = WardrobeRouteImport.update({
-  id: '/wardrobe',
-  path: '/wardrobe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TripsIndexRoute = TripsIndexRouteImport.update({
+const TripsRoute = TripsRouteImport.update({
   id: '/trips/',
   path: '/trips/',
   getParentRoute: () => rootRouteImport,
@@ -49,58 +37,36 @@ const TripsNewRoute = TripsNewRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/wardrobe': typeof WardrobeRoute
+  '/trips/': typeof TripsRoute
   '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/new': typeof TripsNewRoute
-  '/trips/': typeof TripsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/wardrobe': typeof WardrobeRoute
+  '/trips': typeof TripsRoute
   '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/new': typeof TripsNewRoute
-  '/trips': typeof TripsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/wardrobe': typeof WardrobeRoute
+  '/trips/': typeof TripsRoute
   '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/new': typeof TripsNewRoute
-  '/trips/': typeof TripsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/settings'
-    | '/wardrobe'
-    | '/trips/$tripId'
-    | '/trips/new'
-    | '/trips/'
+  fullPaths: '/' | '/trips/' | '/trips/$tripId' | '/trips/new'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/settings' | '/wardrobe' | '/trips/$tripId' | '/trips/new' | '/trips'
-  id:
-    | '__root__'
-    | '/'
-    | '/settings'
-    | '/wardrobe'
-    | '/trips/$tripId'
-    | '/trips/new'
-    | '/trips/'
+  to: '/' | '/trips' | '/trips/$tripId' | '/trips/new'
+  id: '__root__' | '/' | '/trips/' | '/trips/$tripId' | '/trips/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SettingsRoute: typeof SettingsRoute
-  WardrobeRoute: typeof WardrobeRoute
+  TripsRoute: typeof TripsRoute
   TripsTripIdRoute: typeof TripsTripIdRoute
   TripsNewRoute: typeof TripsNewRoute
-  TripsIndexRoute: typeof TripsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -112,25 +78,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/wardrobe': {
-      id: '/wardrobe'
-      path: '/wardrobe'
-      fullPath: '/wardrobe'
-      preLoaderRoute: typeof WardrobeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/trips/': {
       id: '/trips/'
       path: '/trips'
       fullPath: '/trips/'
-      preLoaderRoute: typeof TripsIndexRouteImport
+      preLoaderRoute: typeof TripsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trips/$tripId': {
@@ -152,11 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SettingsRoute: SettingsRoute,
-  WardrobeRoute: WardrobeRoute,
+  TripsRoute: TripsRoute,
   TripsTripIdRoute: TripsTripIdRoute,
   TripsNewRoute: TripsNewRoute,
-  TripsIndexRoute: TripsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
