@@ -11,7 +11,7 @@ export function fmtVolume(l: number): string {
 
 export function parseDate(s: string): number {
   const [y, m, d] = s.split("-").map(Number);
-  return Date.UTC(y, (m || 1) - 1, d || 1);
+  return Date.UTC(y ?? 1970, (m || 1) - 1, d || 1);
 }
 
 export function toISO(ms: number): string {

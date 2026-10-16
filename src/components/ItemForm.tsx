@@ -27,7 +27,7 @@ const toDraft = (i?: Item): Draft => ({
   category: i?.category ?? "top",
   color: i?.color ?? "#8a8f94",
   weightG: i ? String(i.weightG) : "",
-  volumeL: i ? String(i.volumeL) : String(CATEGORIES[0].defaultL),
+  volumeL: i ? String(i.volumeL) : String(CATEGORIES[0]?.defaultL ?? 0.8),
   warmth: i?.warmth ?? "light",
   formality: i?.formality ?? "casual",
   suitable: i?.suitable ?? ["city"],
@@ -44,7 +44,7 @@ export function ItemFormDialog({
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  item?: Item;
+  item?: Item | undefined;
   onSave: (item: Item) => void;
 }) {
   return (
@@ -60,7 +60,7 @@ export function ItemFormDialog({
   );
 }
 
-function ItemForm({ item, onSave, onCancel }: { item?: Item; onSave: (i: Item) => void; onCancel: () => void }) {
+function ItemForm({ item, onSave, onCancel }: { item?: Item | undefined; onSave: (i: Item) => void; onCancel: () => void }) {
   const [d, setD] = useState<Draft>(() => toDraft(item));
   const [volTouched, setVolTouched] = useState(!!item);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -70,17 +70,17 @@ function ItemForm({ item, onSave, onCancel }: { item?: Item; onSave: (i: Item) =
     e.preventDefault();
     const errs: Record<string, string> = {};
     const name = d.name.trim();
-    if (!name) errs.name = "Give the item a name.";
-    else if (name.length > 60) errs.name = "Keep the name under 60 characters.";
+    if (!name) errs["name"] = "Give the item a name.";
+    else if (name.length > 60) errs["name"] = "Keep the name under 60 characters.";
     const w = Number(d.weightG);
-    if (!d.weightG || !Number.isFinite(w) || w <= 0 || w > 10000) errs.weightG = "Enter a weight between 1 and 10,000 g.";
+    if (!d.weightG || !Number.isFinite(w) || w <= 0 || w > 10000) errs["weightG"] = "Enter a weight between 1 and 10,000 g.";
     const v = Number(d.volumeL);
-    if (!d.volumeL || !Number.isFinite(v) || v <= 0 || v > 40) errs.volumeL = "Enter a volume between 0.05 and 40 L.";
+    if (!d.volumeL || !Number.isFinite(v) || v <= 0 || v > 40) errs["volumeL"] = "Enter a volume between 0.05 and 40 L.";
     const m = Number(d.maxWears);
-    if (!Number.isInteger(m) || m < 1 || m > 99) errs.maxWears = "Enter a whole number from 1 to 99.";
+    if (!Number.isInteger(m) || m < 1 || m > 99) errs["maxWears"] = "Enter a whole number from 1 to 99.";
     const ml = Number(d.containerMl);
     if (d.category === "toiletry" && d.liquid && (!d.containerMl || !Number.isFinite(ml) || ml <= 0 || ml > 2000))
-      errs.containerMl = "Enter the container size in mL.";
+      errs["containerMl"] = "Enter the container size in mL.";
     setErrors(errs);
     if (Object.keys(errs).length) return;
     onSave({

@@ -53,7 +53,8 @@ export function expandDays(legs: Leg[]): Day[] {
       });
     }
   });
-  if (days.length) days[days.length - 1].travel = true;
+  const lastDay = days[days.length - 1];
+  if (lastDay) lastDay.travel = true;
   return days;
 }
 
@@ -307,7 +308,7 @@ export interface PackedEntry {
   item: Item;
   bag: BagId | "worn";
   reason: string;
-  bagReason?: string;
+  bagReason?: string | undefined;
   usage: number;
   added: boolean;
 }

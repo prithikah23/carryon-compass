@@ -28,9 +28,9 @@ export interface Item {
   formality: Formality;
   suitable: Activity[];
   maxWears: number;
-  liquid?: boolean;
-  containerMl?: number;
-  sample?: boolean;
+  liquid?: boolean | undefined;
+  containerMl?: number | undefined;
+  sample?: boolean | undefined;
 }
 
 export interface Leg {
@@ -70,7 +70,7 @@ export interface Trip {
   wearHeaviest: boolean;
   overrides: TripOverrides;
   checked: string[];
-  sample?: boolean;
+  sample?: boolean | undefined;
   createdAt: number;
 }
 

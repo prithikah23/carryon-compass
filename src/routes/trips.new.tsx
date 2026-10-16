@@ -138,7 +138,7 @@ function Builder({ existing }: { existing?: Trip }) {
   const validate = (st: number): Record<string, string> => {
     const e: Record<string, string> = {};
     if (st === 0) {
-      if (!d.name.trim()) e.name = "Give your trip a name.";
+      if (!d.name.trim()) e["name"] = "Give your trip a name.";
       const pos = (k: keyof Draft, label: string, max: number, min = 0.1) => {
         const v = num(String(d[k]));
         if (!Number.isFinite(v) || v < min || v > max) e[k] = `Enter ${label} between ${min} and ${max}.`;
@@ -154,7 +154,7 @@ function Builder({ existing }: { existing?: Trip }) {
       }
     }
     if (st === 1) {
-      if (!d.legs.length) e.legs = "Add at least one leg.";
+      if (!d.legs.length) e["legs"] = "Add at least one leg.";
       d.legs.forEach((l) => {
         if (!l.destination.trim()) e[`${l.id}-destination`] = "Enter a destination.";
         if (!l.start) e[`${l.id}-start`] = "Pick a start date.";
@@ -169,8 +169,8 @@ function Builder({ existing }: { existing?: Trip }) {
       });
       const sorted = [...d.legs].filter((l) => l.start && l.end).sort((a, b) => parseDate(a.start) - parseDate(b.start));
       for (let i = 1; i < sorted.length; i++) {
-        if (parseDate(sorted[i].start) <= parseDate(sorted[i - 1].end)) {
-          e[`${sorted[i].id}-start`] = `Overlaps with ${sorted[i - 1].destination || "the previous leg"}. Start the day after it ends.`;
+        if (parseDate(sorted[i]!.start) <= parseDate(sorted[i - 1]!.end)) {
+          e[`${sorted[i]!.id}-start`] = `Overlaps with ${sorted[i - 1]!.destination || "the previous leg"}. Start the day after it ends.`;
         }
       }
     }
@@ -319,7 +319,7 @@ function Builder({ existing }: { existing?: Trip }) {
 
         {step === 1 && (
           <div className="space-y-5">
-            {errors.legs && <p className="font-medium text-destructive">{errors.legs}</p>}
+            {errors["legs"] && <p className="font-medium text-destructive">{errors["legs"]}</p>}
             {d.legs.map((l, i) => (
               <fieldset key={l.id} className="rounded-xl border bg-background p-4">
                 <div className="mb-3 flex items-center justify-between">
@@ -379,14 +379,14 @@ function Builder({ existing }: { existing?: Trip }) {
                   <Label id="sv-kg">Weight</Label>
                   <span className="font-semibold">{d.souvenirKg.toFixed(1)} kg</span>
                 </div>
-                <Slider aria-labelledby="sv-kg" min={0} max={5} step={0.1} value={[d.souvenirKg]} onValueChange={([v]) => set("souvenirKg", v)} />
+                <Slider aria-labelledby="sv-kg" min={0} max={5} step={0.1} value={[d.souvenirKg]} onValueChange={([v]) => set("souvenirKg", v ?? 0)} />
               </div>
               <div>
                 <div className="mb-2 flex justify-between">
                   <Label id="sv-l">Space</Label>
                   <span className="font-semibold">{d.souvenirL} L</span>
                 </div>
-                <Slider aria-labelledby="sv-l" min={0} max={15} step={0.5} value={[d.souvenirL]} onValueChange={([v]) => set("souvenirL", v)} />
+                <Slider aria-labelledby="sv-l" min={0} max={15} step={0.5} value={[d.souvenirL]} onValueChange={([v]) => set("souvenirL", v ?? 0)} />
               </div>
               <div>
                 <Label htmlFor="sv-bag">Keep it in</Label>

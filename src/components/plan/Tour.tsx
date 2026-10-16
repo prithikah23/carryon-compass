@@ -12,7 +12,7 @@ export function Tour({ onDone }: { onDone: () => void }) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const step = STEPS[i];
+  const step = STEPS[i]!;
 
   useLayoutEffect(() => {
     const el = document.querySelector(`[data-tour="${step.target}"]`);
