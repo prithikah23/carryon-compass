@@ -16,7 +16,7 @@ import { emptyOverrides, type Activity, type BagId, type LimitType, type Rain, t
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/trips/new")({
-  validateSearch: (s: Record<string, unknown>): { edit?: string } => (typeof s.edit === "string" ? { edit: s.edit } : {}),
+  validateSearch: (s: Record<string, unknown>): { edit?: string } => (typeof s["edit"] === "string" ? { edit: s["edit"] } : {}),
   head: () => ({
     meta: [
       { title: "Plan a trip — Carry-On Compass" },
@@ -121,7 +121,7 @@ function NewTrip() {
   return <Builder key={existing?.id ?? "new"} existing={existing} />;
 }
 
-function Builder({ existing }: { existing?: Trip }) {
+function Builder({ existing }: { existing?: Trip | undefined }) {
   const navigate = useNavigate();
   const [d, setD] = useState<Draft>(() => (existing ? fromTrip(existing) : blankDraft()));
   const [step, setStep] = useState(0);

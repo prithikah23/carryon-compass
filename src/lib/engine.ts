@@ -295,7 +295,7 @@ function buildOutfits(packed: Item[], days: Day[], trip: Trip, planeIds: Set<str
 }
 
 export function swapKey(date: string, pieces: OutfitPiece[], index: number) {
-  const slot = pieces[index].slot;
+  const slot = pieces[index]?.slot;
   const nth = pieces.slice(0, index + 1).filter((p) => p.slot === slot).length;
   return `${date}|${slot}|${nth}`;
 }

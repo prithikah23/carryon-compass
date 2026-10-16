@@ -77,7 +77,7 @@ function Trips() {
                     </div>
                     {legs.length > 0 && (
                       <p className="mt-1 text-muted-foreground">
-                        {fmtShort(legs[0].start)} – {fmtShort(legs[legs.length - 1].end)} · {plan.days.length} days · {legs.length} leg{legs.length === 1 ? "" : "s"}
+                        {fmtShort(legs[0]!.start)} – {fmtShort(legs[legs.length - 1]!.end)} · {plan.days.length} days · {legs.length} leg{legs.length === 1 ? "" : "s"}
                       </p>
                     )}
                   </div>

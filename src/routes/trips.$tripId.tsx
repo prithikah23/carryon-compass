@@ -139,7 +139,7 @@ function TripPlan({ trip, items, tourDone, bannerDismissed }: { trip: Trip; item
           </div>
           {legs.length > 0 && (
             <p className="mt-1 text-muted-foreground">
-              {fmtShort(legs[0].start)} – {fmtShort(legs[legs.length - 1].end)} · {plan.days.length} days · {trip.carryOnL} L carry-on + {trip.personalL} L personal item
+              {fmtShort(legs[0]!.start)} – {fmtShort(legs[legs.length - 1]!.end)} · {plan.days.length} days · {trip.carryOnL} L carry-on + {trip.personalL} L personal item
             </p>
           )}
         </div>
