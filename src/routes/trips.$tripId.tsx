@@ -308,107 +308,14 @@ function Plan({ trip }: { trip: PackingTrip }) {
           </ul>
         </section>
       )}
-      <section className="py-8">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl">Your packing list</h2>
-            <p className="mt-1 text-muted-foreground" aria-live="polite">
-              {done} of {trip.entries.length} packed
-              {done === trip.entries.length && done > 0 ? " · All packed. Have a great trip!" : ""}
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => setAddOpen(true)}>
-            <Plus aria-hidden />
-            Add item
-          </Button>
-        </div>
-        {CATEGORIES.map((c) => {
-          const list = trip.entries.filter((e) => e.item.category === c.value);
-          if (!list.length) return null;
-          return (
-            <div className="mb-6" key={c.value}>
-              <h3 className="mb-2 font-sans font-semibold text-muted-foreground">{c.plural}</h3>
-              <ul className="divide-y">
-                {list.map((e) => (
-                  <li
-                    key={e.item.id}
-                    className={cn("py-4", fixes.includes(e.item.id) && "bg-warning-soft px-3")}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id={e.item.id}
-                        checked={e.packed}
-                        onCheckedChange={(packed) => patch(e.item.id, { packed: packed === true })}
-                        className="mt-2 size-5"
-                      />
-                      <ItemIcon item={e.item} className="mt-1 size-8" />
-                      <div className="min-w-0 flex-1">
-                        <label
-                          htmlFor={e.item.id}
-                          className={cn(
-                            "flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 font-semibold",
-                            e.packed && "line-through text-muted-foreground",
-                          )}
-                        >
-                          {e.item.name}
-                          <span className="font-normal text-muted-foreground">
-                            {fmtWeight(e.item.weightG)}
-                          </span>
-                        </label>
-                        <p className="text-muted-foreground">{e.reason}</p>
-                        <p className="mt-1 font-medium text-primary">
-                          {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
-                        </p>
-                        {fixes.includes(e.item.id) && (
-                          <p className="mt-2 text-warning">
-                            Remove: saves {fmtWeight(e.item.weightG)} and{" "}
-                            {fmtVolume(e.item.volumeL)} ·{" "}
-                            {e.impact === 0
-                              ? "added extra"
-                              : e.impact === 1
-                                ? "needed for only one activity or as a spare"
-                                : "lower-impact spare compared with daily essentials"}
-                          </p>
-                        )}
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Button
-                            variant="ghost"
-                            className="px-2"
-                            onClick={() => {
-                              const bag = e.bag === "carryOn" ? "personal" : "carryOn";
-                              patch(e.item.id, { bag });
-                              toast.success(
-                                `Moved ${e.item.name} to ${bagLabel(bag).toLowerCase()}`,
-                              );
-                            }}
-                          >
-                            <ArrowLeftRight aria-hidden />
-                            {e.bag === "worn" ? "Pack in carry-on" : "Move to other bag"}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            className="px-2 text-destructive"
-                            onClick={() => {
-                              savePackingTrip({
-                                ...trip,
-                                entries: trip.entries.filter((x) => x.item.id !== e.item.id),
-                              });
-                              toast.success(`Removed ${e.item.name}`);
-                            }}
-                          >
-                            <Trash2 aria-hidden />
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </section>
+      <PackingList
+        trip={trip}
+        fixes={fixes}
+        done={done}
+        patch={patch}
+        onAdd={() => setAddOpen(true)}
+      />
+
       <div className="flex flex-wrap gap-3 border-t pt-5">
         <Button variant="outline" onClick={() => setConfirm("start")}>
           Start over
