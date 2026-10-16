@@ -49,7 +49,7 @@ export function Tour({ onDone }: { onDone: () => void }) {
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="tour-text">
       {rect ? (
         <div
-          className="pointer-events-none absolute rounded-2xl ring-4 ring-accent transition-all"
+          className="pointer-events-none absolute rounded-2xl ring-4 ring-accent"
           style={{
             top: rect.top - pad,
             left: rect.left - pad,
