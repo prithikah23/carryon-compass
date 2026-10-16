@@ -5,3 +5,4 @@
 - [x] Meters, souvenir direction toggle, packing actions, search and custom items
 - [x] Confirmed reset/start over, footer limitations and accessible phone layout
 - [x] Test complete fresh-browser journey and packing edge cases
+- [x] Packing list redesign: bag tabs + compact rows

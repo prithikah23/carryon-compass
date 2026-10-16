@@ -524,3 +524,193 @@ function AddDialog({
     </Dialog>
   );
 }
+
+type BagTab = "all" | "carryOn" | "personal" | "worn";
+const BAG_TABS: { id: BagTab; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "carryOn", label: "Carry-on" },
+  { id: "personal", label: "Personal item" },
+  { id: "worn", label: "Worn" },
+];
+
+function PackingList({
+  trip,
+  fixes,
+  done,
+  patch,
+  onAdd,
+}: {
+  trip: PackingTrip;
+  fixes: string[];
+  done: number;
+  patch: (id: string, change: Partial<PackItem>) => void;
+  onAdd: () => void;
+}) {
+  const [tab, setTab] = useState<BagTab>("all");
+  const [open, setOpen] = useState<string | null>(null);
+  const shown = trip.entries.filter((e) => tab === "all" || e.bag === tab);
+  const pct = trip.entries.length ? Math.round((done / trip.entries.length) * 100) : 0;
+  return (
+    <section className="py-8">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl">Your packing list</h2>
+          <p className="mt-1 text-muted-foreground" aria-live="polite">
+            {done} of {trip.entries.length} packed
+            {done === trip.entries.length && done > 0 ? " · All packed. Have a great trip!" : ""}
+          </p>
+        </div>
+        <Button variant="outline" onClick={onAdd}>
+          <Plus aria-hidden />
+          Add item
+        </Button>
+      </div>
+      <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+        <div className="h-full bg-success transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <div
+        role="tablist"
+        aria-label="Filter by bag"
+        className="mb-5 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1"
+      >
+        {BAG_TABS.map((b) => {
+          const count = trip.entries.filter((e) => b.id === "all" || e.bag === b.id).length;
+          return (
+            <button
+              key={b.id}
+              role="tab"
+              aria-selected={tab === b.id}
+              onClick={() => setTab(b.id)}
+              className={cn(
+                "min-h-11 flex-1 whitespace-nowrap rounded-lg px-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+                tab === b.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {b.label} <span className="text-muted-foreground">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+      {shown.length === 0 && (
+        <p className="py-6 text-center text-muted-foreground">Nothing in this bag yet.</p>
+      )}
+      {CATEGORIES.map((c) => {
+        const list = shown.filter((e) => e.item.category === c.value);
+        if (!list.length) return null;
+        const g = list.reduce((s, e) => s + e.item.weightG, 0);
+        return (
+          <div className="mb-5" key={c.value}>
+            <h3 className="mb-1 flex justify-between font-sans font-semibold text-muted-foreground">
+              <span>{c.plural}</span>
+              <span className="font-normal">
+                {list.length} · {fmtWeight(g)}
+              </span>
+            </h3>
+            <ul className="divide-y rounded-xl border">
+              {list.map((e) => {
+                const fix = fixes.includes(e.item.id);
+                const expanded = open === e.item.id;
+                return (
+                  <li key={e.item.id} className={cn(fix && "bg-warning-soft")}>
+                    <div className="flex items-center gap-2 px-2 sm:px-3">
+                      <Checkbox
+                        id={e.item.id}
+                        checked={e.packed}
+                        onCheckedChange={(p) => patch(e.item.id, { packed: p === true })}
+                        className="size-5"
+                        aria-label={`Packed ${e.item.name}`}
+                      />
+                      <ItemIcon item={e.item} className="size-7 shrink-0" />
+                      <button
+                        type="button"
+                        aria-expanded={expanded}
+                        onClick={() => setOpen(expanded ? null : e.item.id)}
+                        className="flex min-h-12 min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-ring"
+                      >
+                        <span
+                          className={cn(
+                            "truncate font-medium",
+                            e.packed && "line-through text-muted-foreground",
+                          )}
+                        >
+                          {e.item.name}
+                        </span>
+                        {fix && (
+                          <span className="shrink-0 rounded bg-warning/15 px-1.5 text-warning">
+                            Remove?
+                          </span>
+                        )}
+                        <span className="ml-auto shrink-0 text-muted-foreground">
+                          {fmtWeight(e.item.weightG)}
+                        </span>
+                      </button>
+                      {tab === "all" && (
+                        <span className="hidden shrink-0 rounded-full bg-secondary px-2 text-primary sm:inline">
+                          {e.bag === "worn" ? "Worn" : e.bag === "carryOn" ? "Carry-on" : "Personal"}
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-11 shrink-0"
+                        aria-label={
+                          e.bag === "worn"
+                            ? `Pack ${e.item.name} in carry-on`
+                            : `Move ${e.item.name} to other bag`
+                        }
+                        title="Move to other bag"
+                        onClick={() => {
+                          const bag = e.bag === "carryOn" ? "personal" : "carryOn";
+                          patch(e.item.id, { bag });
+                          toast.success(`Moved ${e.item.name} to ${bagLabel(bag).toLowerCase()}`);
+                        }}
+                      >
+                        <ArrowLeftRight aria-hidden />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-11 shrink-0 text-destructive"
+                        aria-label={`Remove ${e.item.name}`}
+                        title="Remove"
+                        onClick={() => {
+                          savePackingTrip({
+                            ...trip,
+                            entries: trip.entries.filter((x) => x.item.id !== e.item.id),
+                          });
+                          toast.success(`Removed ${e.item.name}`);
+                        }}
+                      >
+                        <Trash2 aria-hidden />
+                      </Button>
+                    </div>
+                    {(expanded || fix) && (
+                      <div className="pb-3 pl-[4.25rem] pr-3 text-muted-foreground">
+                        <p>
+                          {e.reason} · {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
+                        </p>
+                        {fix && (
+                          <p className="mt-1 text-warning">
+                            Remove: saves {fmtWeight(e.item.weightG)} and {fmtVolume(e.item.volumeL)}{" "}
+                            ·{" "}
+                            {e.impact === 0
+                              ? "added extra"
+                              : e.impact === 1
+                                ? "needed for only one activity or as a spare"
+                                : "lower-impact spare compared with daily essentials"}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
