@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WardrobeRouteImport } from './routes/wardrobe'
 import { Route as TripsIndexRouteImport } from './routes/trips.index'
+import { Route as TripsTripIdRouteImport } from './routes/trips.$tripId'
 import { Route as TripsNewRouteImport } from './routes/trips.new'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const TripsIndexRoute = TripsIndexRouteImport.update({
   path: '/trips/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TripsTripIdRoute = TripsTripIdRouteImport.update({
+  id: '/trips/$tripId',
+  path: '/trips/$tripId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TripsNewRoute = TripsNewRouteImport.update({
   id: '/trips/new',
   path: '/trips/new',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/new': typeof TripsNewRoute
   '/trips/': typeof TripsIndexRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/new': typeof TripsNewRoute
   '/trips': typeof TripsIndexRoute
 }
@@ -60,21 +68,37 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/new': typeof TripsNewRoute
   '/trips/': typeof TripsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/settings' | '/wardrobe' | '/trips/new' | '/trips/'
+  fullPaths:
+    | '/'
+    | '/settings'
+    | '/wardrobe'
+    | '/trips/$tripId'
+    | '/trips/new'
+    | '/trips/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/settings' | '/wardrobe' | '/trips/new' | '/trips'
-  id: '__root__' | '/' | '/settings' | '/wardrobe' | '/trips/new' | '/trips/'
+  to:
+    '/' | '/settings' | '/wardrobe' | '/trips/$tripId' | '/trips/new' | '/trips'
+  id:
+    | '__root__'
+    | '/'
+    | '/settings'
+    | '/wardrobe'
+    | '/trips/$tripId'
+    | '/trips/new'
+    | '/trips/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRoute: typeof SettingsRoute
   WardrobeRoute: typeof WardrobeRoute
+  TripsTripIdRoute: typeof TripsTripIdRoute
   TripsNewRoute: typeof TripsNewRoute
   TripsIndexRoute: typeof TripsIndexRoute
 }
@@ -109,6 +133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TripsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trips/$tripId': {
+      id: '/trips/$tripId'
+      path: '/trips/$tripId'
+      fullPath: '/trips/$tripId'
+      preLoaderRoute: typeof TripsTripIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trips/new': {
       id: '/trips/new'
       path: '/trips/new'
@@ -123,6 +154,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRoute: SettingsRoute,
   WardrobeRoute: WardrobeRoute,
+  TripsTripIdRoute: TripsTripIdRoute,
   TripsNewRoute: TripsNewRoute,
   TripsIndexRoute: TripsIndexRoute,
 }
