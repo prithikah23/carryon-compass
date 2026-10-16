@@ -195,21 +195,28 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   for (const e of layers.slice(0, 2)) e.bag = "worn";
   for (const e of entries)
     if (["documents", "tech", "toiletry"].includes(e.item.category)) e.bag = "personal";
-  for (const category of ["top", "bottom", "basics"]) {
-    const e = entries.find((e) => e.bag === "carryOn" && e.item.category === category);
-    if (e) e.bag = "personal";
-  }
-  // Rebalance only when useful: protect travel documents and first-day essentials.
+  // Keep every copy of an item together in one bag, and fill the carry-on first.
   const vol = (bag: BagId) =>
     entries.filter((e) => e.bag === bag).reduce((s, e) => s + e.item.volumeL, 0);
-  for (const e of entries
-    .filter((e) => e.bag === "carryOn" && !e.essential)
-    .sort((a, b) => a.impact - b.impact))
+  const groupOf = (name: string) => entries.filter((x) => x.item.name === name);
+  // Change of clothes in the personal item: one single-copy top/bottom if available.
+  for (const category of ["top", "bottom"]) {
+    const single = entries.find(
+      (e) => e.bag === "carryOn" && e.item.category === category && groupOf(e.item.name).length === 1,
+    );
+    if (single) single.bag = "personal";
+  }
+  const names = [...new Set(entries.filter((e) => e.bag === "carryOn" && !e.essential).map((e) => e.item.name))];
+  names.sort((a, b) => (groupOf(a)[0]?.impact ?? 0) - (groupOf(b)[0]?.impact ?? 0));
+  for (const name of names) {
+    const grp = groupOf(name);
+    const l = grp.reduce((s, e) => s + e.item.volumeL, 0);
     if (
       vol("carryOn") + souvenirVolume(input.souvenirKg) > input.carryOnL &&
-      vol("personal") + e.item.volumeL <= input.personalL
+      vol("personal") + l <= input.personalL
     )
-      e.bag = "personal";
+      for (const e of grp) e.bag = "personal";
+  }
   return { ...input, entries };
 }
 export function totals(trip: PackingTrip, returning = false) {
