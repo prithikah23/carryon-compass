@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { ACTIVITIES, CATEGORIES, type Activity, type Category, type Formality, type Item, type Warmth } from "@/lib/types";
 import { uid } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { CatalogBrowser } from "./CatalogBrowser";
+import { ItemColors } from "./ItemColors";
+import { ItemIcon } from "./ItemIcon";
 
 interface Draft {
   name: string;
@@ -22,8 +25,8 @@ interface Draft {
   containerMl: string;
 }
 
-const toDraft = (i?: Item): Draft => ({
-  name: i?.name ?? "",
+const toDraft = (i?: Item, initialName = ""): Draft => ({
+  name: i?.name ?? initialName,
   category: i?.category ?? "top",
   color: i?.color ?? "#8a8f94",
   weightG: i ? String(i.weightG) : "",
@@ -41,27 +44,34 @@ export function ItemFormDialog({
   onOpenChange,
   item,
   onSave,
+  initialName = "",
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   item?: Item | undefined;
   onSave: (item: Item) => void;
+  initialName?: string;
 }) {
+  const [customName, setCustomName] = useState<string | null>(null);
+  const [catalogEditing, setCatalogEditing] = useState<Item | undefined>();
+  const selected = item ?? catalogEditing;
+  const custom = customName ?? (initialName || null);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+    <Dialog open={open} onOpenChange={(value) => { if (!value) { setCustomName(null); setCatalogEditing(undefined); } onOpenChange(value); }}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">{item ? "Edit item" : "Add an item"}</DialogTitle>
+          <DialogTitle className="font-display text-2xl">{selected ? "Edit item" : custom !== null ? "Custom item" : "Add an item"}</DialogTitle>
           <DialogDescription>Weights in grams, space in litres. Estimates are fine.</DialogDescription>
         </DialogHeader>
-        {open && <ItemForm key={item?.id ?? "new"} item={item} onSave={onSave} onCancel={() => onOpenChange(false)} />}
+        {open && (selected || custom !== null ? <ItemForm key={selected?.id ?? custom ?? "new"} item={selected} initialName={custom ?? ""} onSave={(saved) => { setCustomName(null); setCatalogEditing(undefined); onSave(saved); }} onCancel={() => { setCustomName(null); setCatalogEditing(undefined); onOpenChange(false); }} /> : <CatalogBrowser onEdit={setCatalogEditing} onCustom={setCustomName} />)}
       </DialogContent>
     </Dialog>
   );
 }
 
-function ItemForm({ item, onSave, onCancel }: { item?: Item | undefined; onSave: (i: Item) => void; onCancel: () => void }) {
-  const [d, setD] = useState<Draft>(() => toDraft(item));
+function ItemForm({ item, initialName, onSave, onCancel }: { item?: Item | undefined; initialName: string; onSave: (i: Item) => void; onCancel: () => void }) {
+  const [d, setD] = useState<Draft>(() => toDraft(item, initialName));
+  const [details, setDetails] = useState(!!item);
   const [volTouched, setVolTouched] = useState(!!item);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
@@ -85,6 +95,7 @@ function ItemForm({ item, onSave, onCancel }: { item?: Item | undefined; onSave:
     if (Object.keys(errs).length) return;
     onSave({
       id: item?.id ?? uid(),
+      catalogId: item?.catalogId,
       name,
       category: d.category,
       color: d.color,
@@ -139,6 +150,7 @@ function ItemForm({ item, onSave, onCancel }: { item?: Item | undefined; onSave:
         <div>
           <Label htmlFor="f-color">Color</Label>
           <div className="flex items-center gap-2">
+            <ItemIcon item={d} />
             <input id="f-color" type="color" value={d.color} onChange={(e) => set("color", e.target.value)} className="h-11 w-full cursor-pointer rounded-lg border bg-card p-1" />
           </div>
         </div>
@@ -161,18 +173,20 @@ function ItemForm({ item, onSave, onCancel }: { item?: Item | undefined; onSave:
           />
           {err("volumeL")}
         </div>
-        <Choice label="Warmth" value={d.warmth} options={["light", "medium", "warm"]} onChange={(v) => set("warmth", v as Warmth)} />
-        <Choice label="Formality" value={d.formality} options={["casual", "smart", "formal"]} onChange={(v) => set("formality", v as Formality)} />
+        {details && <Choice label="Warmth" value={d.warmth} options={["light", "medium", "warm"]} onChange={(v) => set("warmth", v as Warmth)} />}
+        {details && <Choice label="Formality" value={d.formality} options={["casual", "smart", "formal"]} onChange={(v) => set("formality", v as Formality)} />}
       </div>
-      <fieldset>
+      <ItemColors name={d.name || "item"} color={d.color} onChange={(color) => set("color", color)} />
+      {!item && <Button type="button" variant="link" className="px-0" aria-expanded={details} onClick={() => setDetails(!details)}>{details ? "Fewer details" : "More details"}</Button>}
+      {details && <fieldset>
         <legend className="mb-2 text-sm font-medium">Suitable for</legend>
         <ActivityPicker value={d.suitable} onChange={(v) => set("suitable", v)} />
-      </fieldset>
-      <div>
+      </fieldset>}
+      {details && <div>
         <Label htmlFor="f-m">Max wears before washing</Label>
         <Input id="f-m" inputMode="numeric" value={d.maxWears} onChange={(e) => set("maxWears", e.target.value)} {...aria("maxWears")} />
         {err("maxWears")}
-      </div>
+      </div>}
       {d.category === "toiletry" && (
         <div className="grid grid-cols-2 gap-3 rounded-xl bg-muted p-3">
           <Choice label="Liquid?" value={d.liquid ? "yes" : "no"} options={["yes", "no"]} onChange={(v) => set("liquid", v === "yes")} />
@@ -222,7 +236,7 @@ export function ActivityPicker({ value, onChange }: { value: Activity[]; onChang
       {ACTIVITIES.map((a) => {
         const on = value.includes(a);
         return (
-          <button
+          <Button
             key={a}
             type="button"
             aria-pressed={on}
@@ -233,7 +247,7 @@ export function ActivityPicker({ value, onChange }: { value: Activity[]; onChang
             )}
           >
             {a}
-          </button>
+          </Button>
         );
       })}
     </div>

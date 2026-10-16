@@ -19,6 +19,7 @@ export type LimitType = "combined" | "separate" | "none";
 
 export interface Item {
   id: string;
+  catalogId?: string | undefined;
   name: string;
   category: Category;
   color: string;

@@ -15,3 +15,5 @@
 - Store is read only after hydration (useSyncExternalStore with an "unloaded" server snapshot); pages render a skeleton until loaded. Why: avoids SSR hydration mismatches.
 - Packing/outfit logic is a pure deterministic module `src/lib/engine.ts`; UI never duplicates its rules. Why: testable, consistent reasons everywhere.
 - User edits to a recommendation are stored as `trip.overrides` on top of the computed plan, so "Restore recommendation" just clears them.
+- Catalog defaults and synonym matching live in a pure catalog module; repeated additions are separate Item records linked by catalogId so existing per-item packing rules remain accurate.
+- A shared ItemIcon renders category/name-specific line illustrations using each item's stored color so wardrobe and trip displays stay consistent.
