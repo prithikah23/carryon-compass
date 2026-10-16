@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EmptyState, PageHeader, PageLoading, SampleBadge } from "@/components/common";
 import { ItemFormDialog } from "@/components/ItemForm";
+import { CatalogBrowser } from "@/components/CatalogBrowser";
+import { ItemIcon } from "@/components/ItemIcon";
 import { actions, useAppState } from "@/lib/store";
 import { CATEGORIES, categoryLabel, type Item } from "@/lib/types";
 import { fmtVolume, fmtWeight } from "@/lib/format";
@@ -42,6 +44,7 @@ function Wardrobe() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Item | undefined>();
   const [formOpen, setFormOpen] = useState(false);
+  const [initialName, setInitialName] = useState("");
   const [deleting, setDeleting] = useState<Item | null>(null);
 
   const list = useMemo(
@@ -53,6 +56,7 @@ function Wardrobe() {
 
   const openNew = () => {
     setEditing(undefined);
+    setInitialName("");
     setFormOpen(true);
   };
 
@@ -68,6 +72,8 @@ function Wardrobe() {
         }
       />
 
+      <CatalogBrowser onEdit={(item) => { setEditing(item); setInitialName(""); setFormOpen(true); }} onCustom={(name) => { setEditing(undefined); setInitialName(name || " "); setFormOpen(true); }} />
+      <h2 className="mb-4 text-xl font-semibold">Your wardrobe</h2>
       {s.items.length === 0 ? (
         <EmptyState
           title="No items yet. Add your first item or load the sample wardrobe."
@@ -128,7 +134,7 @@ function Wardrobe() {
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((i) => (
                 <li key={i.id} className="flex gap-3 rounded-2xl border bg-card p-4">
-                  <span className="mt-1 size-8 shrink-0 rounded-full border" style={{ backgroundColor: i.color }} aria-hidden />
+                  <ItemIcon item={i} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold">{i.name}</p>
@@ -167,6 +173,7 @@ function Wardrobe() {
         open={formOpen}
         onOpenChange={setFormOpen}
         item={editing}
+        initialName={initialName}
         onSave={(item) => {
           actions.saveItem(item);
           setFormOpen(false);
