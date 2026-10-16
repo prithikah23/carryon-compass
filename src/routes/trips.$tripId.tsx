@@ -119,7 +119,7 @@ function Meter({
         />
         <span
           className={returning ? "bg-accent" : "stripes"}
-          style={{ width: `${Math.min(100 - (used / limit) * 100, (reserve / limit) * 100)}%` }}
+          style={{ width: `${Math.max(0, Math.min(100 - (used / limit) * 100, (reserve / limit) * 100))}%` }}
         />
       </div>
       <p

@@ -26,6 +26,10 @@ export const Route = createFileRoute("/trips/new")({
 });
 function Setup() {
   const state = usePackingState();
+  if (!state.loaded) return <div className="p-10" role="status">Loading trip setup…</div>;
+  return <Builder />;
+}
+function Builder() {
   const navigate = useNavigate();
   const [stops, setStops] = useState<Stop[]>(() => [newStop()]);
   const [carry, setCarry] = useState(40);
@@ -138,6 +142,7 @@ function Setup() {
                   />
                   <div className="flex items-center gap-3">
                     <Switch
+                      className="relative after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
                       id={l.id + "cold"}
                       checked={l.coldNights}
                       onCheckedChange={(coldNights) => patch(l.id, { coldNights })}
