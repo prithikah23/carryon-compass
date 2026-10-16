@@ -8,6 +8,6 @@
 - [x] Trip plan: verdict, meters, outbound/return, packing list, wear-on-plane, gate-check, liquids, outfits, editing, fixes, checklist
 - [x] Tour + banner, Settings (replay, reset, start fresh, about)
 - [x] Final journey check in a fresh browser
-- [ ] Searchable 60-item catalog on Wardrobe and Add item panel
-- [ ] Quick-add defaults, quantities, color dots and icons across item displays
-- [ ] Short custom form and keyboard navigation; verify complete journey
+- [x] Searchable 60-item catalog on Wardrobe and Add item panel
+- [x] Quick-add defaults, quantities, color dots and icons across item displays
+- [x] Short custom form and keyboard navigation; verify complete journey
