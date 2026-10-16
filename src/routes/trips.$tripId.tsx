@@ -603,7 +603,7 @@ function PackingList({
         const g = list.reduce((s, e) => s + e.item.weightG, 0);
         const groups: PackItem[][] = [];
         for (const e of list) {
-          const found = groups.find((x) => x[0]!.item.name === e.item.name && x[0]!.bag === e.bag);
+          const found = groups.find((x) => x[0]!.item.name === e.item.name);
           if (found) found.push(e);
           else groups.push([e]);
         }
