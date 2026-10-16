@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { EmptyState, PageLoading, SampleBadge } from "@/components/common";
 import { MeterBar } from "@/components/plan/Meters";
 import { Tour } from "@/components/plan/Tour";
+import { ItemIcon } from "@/components/ItemIcon";
 import { actions, useAppState } from "@/lib/store";
 import { computePlan, swapKey, type Fix, type PackedEntry, type Plan } from "@/lib/engine";
 import { fmtDay, fmtShort, fmtVolume, fmtWeight } from "@/lib/format";
@@ -303,7 +304,7 @@ function WearOnPlane({ trip, plan }: { trip: Trip; plan: Plan }) {
           <ul className="mt-3 flex flex-wrap gap-2">
             {worn.map((e) => (
               <li key={e.item.id} className="flex items-center gap-2 rounded-full border bg-background px-3 py-2">
-                <span className="size-4 rounded-full border" style={{ backgroundColor: e.item.color }} aria-hidden />
+                <ItemIcon item={e.item} className="size-6" />
                 {e.item.name} <span className="text-sm text-muted-foreground">{fmtWeight(e.item.weightG)}</span>
               </li>
             ))}
@@ -393,7 +394,7 @@ function Liquids({ plan }: { plan: Plan }) {
               const big = oversize.includes(i);
               return (
                 <li key={i.id} className="flex items-center justify-between py-2">
-                  <span>{i.name}</span>
+                  <span className="flex items-center gap-2"><ItemIcon item={i} className="size-6" />{i.name}</span>
                   <span className={cn("text-sm", big ? "font-semibold text-destructive" : "text-muted-foreground")}>
                     {i.containerMl} mL{big ? " · over 100 mL, check it or decant" : ""}
                   </span>
@@ -454,7 +455,7 @@ function PackRow({ e, tour, onMove, onRemove }: { e: PackedEntry; tour: boolean;
   return (
     <li data-tour={tour ? "packing" : undefined} className="flex flex-col gap-3 rounded-xl border bg-background p-3 sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 gap-3">
-        <span className="mt-1 size-6 shrink-0 rounded-full border" style={{ backgroundColor: e.item.color }} aria-hidden />
+        <ItemIcon item={e.item} className="mt-1 size-8" />
         <div className="min-w-0">
           <p className="font-semibold">
             {e.item.name} <span className="font-normal text-muted-foreground">· {fmtWeight(e.item.weightG)} · {fmtVolume(e.item.volumeL)}</span>
@@ -520,7 +521,7 @@ function Outfits({ plan, itemById, trip }: { plan: Plan; itemById: Map<string, I
                 const wears = plan.usage.get(it.id) ?? 0;
                 return (
                   <li key={key} className="flex items-center gap-2">
-                    <span className="size-4 shrink-0 rounded-full border" style={{ backgroundColor: it.color }} aria-hidden />
+                    <ItemIcon item={it} className="size-6" />
                     <Select
                       value={it.id}
                       onValueChange={(v) => {
@@ -534,7 +535,7 @@ function Outfits({ plan, itemById, trip }: { plan: Plan; itemById: Map<string, I
                       <SelectContent>
                         {options.map((x) => (
                           <SelectItem key={x.id} value={x.id}>
-                            {x.name}
+                            <span className="flex items-center gap-2"><ItemIcon item={x} className="size-5" />{x.name}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -584,6 +585,7 @@ function AddItemsDialog({
           <ul className="divide-y">
             {rest.map((i) => (
               <li key={i.id} className="flex items-center justify-between gap-3 py-2">
+                <ItemIcon item={i} className="size-8" />
                 <span>
                   <span className="font-medium">{i.name}</span>
                   <span className="block text-sm text-muted-foreground">
@@ -654,6 +656,7 @@ function Checklist({ trip, plan }: { trip: Trip; plan: Plan }) {
                     <li key={e.item.id}>
                       <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-secondary">
                         <Checkbox id={id} checked={checked.has(e.item.id)} onCheckedChange={(v) => toggle(e.item.id, v === true)} className="size-5" />
+                        <ItemIcon item={e.item} className="size-6" />
                         <span className={cn(checked.has(e.item.id) && "text-muted-foreground line-through")}>{e.item.name}</span>
                       </label>
                     </li>
