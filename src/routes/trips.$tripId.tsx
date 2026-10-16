@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Plane,
   Plus,
+  Minus,
   RotateCcw,
   Trash2,
   Search,
@@ -600,6 +601,13 @@ function PackingList({
         const list = shown.filter((e) => e.item.category === c.value);
         if (!list.length) return null;
         const g = list.reduce((s, e) => s + e.item.weightG, 0);
+        const groups: PackItem[][] = [];
+        for (const e of list) {
+          const found = groups.find((x) => x[0]!.item.name === e.item.name && x[0]!.bag === e.bag);
+          if (found) found.push(e);
+          else groups.push([e]);
+        }
+        const save = (entries: PackItem[]) => savePackingTrip({ ...trip, entries });
         return (
           <div className="mb-5" key={c.value}>
             <h3 className="mb-1 flex justify-between font-sans font-semibold text-muted-foreground">
@@ -609,47 +617,108 @@ function PackingList({
               </span>
             </h3>
             <ul className="divide-y rounded-xl border">
-              {list.map((e) => {
-                const fix = fixes.includes(e.item.id);
-                const expanded = open === e.item.id;
+              {groups.map((grp) => {
+                const e = grp[0]!;
+                const n = grp.length;
+                const ids = new Set(grp.map((x) => x.item.id));
+                const fixEntry = grp.find((x) => fixes.includes(x.item.id));
+                const fix = !!fixEntry;
+                const key = `${e.item.name}-${e.bag}`;
+                const expanded = open === key;
+                const allPacked = grp.every((x) => x.packed);
+                const last = grp[n - 1]!;
+                const removeOne = (id: string) => {
+                  save(trip.entries.filter((x) => x.item.id !== id));
+                };
                 return (
-                  <li key={e.item.id} className={cn(fix && "bg-warning-soft")}>
+                  <li key={key} className={cn(fix && "bg-warning-soft")}>
                     <div className="flex items-center gap-2 px-2 sm:px-3">
                       <Checkbox
-                        id={e.item.id}
-                        checked={e.packed}
-                        onCheckedChange={(p) => patch(e.item.id, { packed: p === true })}
+                        id={key}
+                        checked={allPacked}
+                        onCheckedChange={(p) =>
+                          save(
+                            trip.entries.map((x) =>
+                              ids.has(x.item.id) ? { ...x, packed: p === true } : x,
+                            ),
+                          )
+                        }
                         className="size-5"
-                        aria-label={`Packed ${e.item.name}`}
+                        aria-label={`Packed ${e.item.name}${n > 1 ? `, all ${n}` : ""}`}
                       />
                       <ItemIcon item={e.item} className="size-7 shrink-0" />
                       <button
                         type="button"
                         aria-expanded={expanded}
-                        onClick={() => setOpen(expanded ? null : e.item.id)}
+                        onClick={() => setOpen(expanded ? null : key)}
                         className="flex min-h-12 min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-ring"
                       >
                         <span
                           className={cn(
                             "truncate font-medium",
-                            e.packed && "line-through text-muted-foreground",
+                            allPacked && "line-through text-muted-foreground",
                           )}
                         >
                           {e.item.name}
+                          {n > 1 && <span className="text-muted-foreground"> × {n}</span>}
                         </span>
                         {fix && (
                           <span className="shrink-0 rounded bg-warning/15 px-1.5 text-warning">
-                            Remove?
+                            {n > 1 ? "Fewer?" : "Remove?"}
                           </span>
                         )}
                         <span className="ml-auto shrink-0 text-muted-foreground">
-                          {fmtWeight(e.item.weightG)}
+                          {fmtWeight(e.item.weightG * n)}
                         </span>
                       </button>
                       {tab === "all" && (
-                        <span className="hidden shrink-0 rounded-full bg-secondary px-2 text-primary sm:inline">
+                        <span className="hidden shrink-0 rounded-full bg-secondary px-2 text-primary md:inline">
                           {e.bag === "worn" ? "Worn" : e.bag === "carryOn" ? "Carry-on" : "Personal"}
                         </span>
+                      )}
+                      {e.bag !== "worn" && (
+                        <div
+                          className="flex shrink-0 items-center rounded-lg border"
+                          role="group"
+                          aria-label={`${e.item.name} quantity`}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-11"
+                            aria-label={n > 1 ? `One fewer ${e.item.name}` : `Remove ${e.item.name}`}
+                            onClick={() => {
+                              removeOne(last.item.id);
+                              toast.success(
+                                n > 1 ? `${e.item.name}: ${n - 1} left` : `Removed ${e.item.name}`,
+                              );
+                            }}
+                          >
+                            {n > 1 ? <Minus aria-hidden /> : <Trash2 aria-hidden className="text-destructive" />}
+                          </Button>
+                          <span className="w-5 text-center tabular-nums" aria-live="polite">
+                            {n}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-11"
+                            aria-label={`One more ${e.item.name}`}
+                            onClick={() => {
+                              save([
+                                ...trip.entries,
+                                {
+                                  ...last,
+                                  packed: false,
+                                  item: { ...last.item, id: `${last.item.id}-${crypto.randomUUID().slice(0, 6)}` },
+                                },
+                              ]);
+                              toast.success(`${e.item.name}: ${n + 1}`);
+                            }}
+                          >
+                            <Plus aria-hidden />
+                          </Button>
+                        </div>
                       )}
                       <Button
                         variant="ghost"
@@ -658,46 +727,49 @@ function PackingList({
                         aria-label={
                           e.bag === "worn"
                             ? `Pack ${e.item.name} in carry-on`
-                            : `Move ${e.item.name} to other bag`
+                            : n > 1
+                              ? `Move one ${e.item.name} to other bag`
+                              : `Move ${e.item.name} to other bag`
                         }
                         title="Move to other bag"
                         onClick={() => {
                           const bag = e.bag === "carryOn" ? "personal" : "carryOn";
-                          patch(e.item.id, { bag });
-                          toast.success(`Moved ${e.item.name} to ${bagLabel(bag).toLowerCase()}`);
+                          patch(last.item.id, { bag });
+                          toast.success(
+                            `Moved ${n > 1 ? "one " : ""}${e.item.name} to ${bagLabel(bag).toLowerCase()}`,
+                          );
                         }}
                       >
                         <ArrowLeftRight aria-hidden />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-11 shrink-0 text-destructive"
-                        aria-label={`Remove ${e.item.name}`}
-                        title="Remove"
-                        onClick={() => {
-                          savePackingTrip({
-                            ...trip,
-                            entries: trip.entries.filter((x) => x.item.id !== e.item.id),
-                          });
-                          toast.success(`Removed ${e.item.name}`);
-                        }}
-                      >
-                        <Trash2 aria-hidden />
-                      </Button>
+                      {e.bag === "worn" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-11 shrink-0 text-destructive"
+                          aria-label={`Remove ${e.item.name}`}
+                          onClick={() => {
+                            save(trip.entries.filter((x) => !ids.has(x.item.id)));
+                            toast.success(`Removed ${e.item.name}`);
+                          }}
+                        >
+                          <Trash2 aria-hidden />
+                        </Button>
+                      )}
                     </div>
                     {(expanded || fix) && (
                       <div className="pb-3 pl-[4.25rem] pr-3 text-muted-foreground">
                         <p>
                           {e.reason} · {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
                         </p>
-                        {fix && (
+                        {fixEntry && (
                           <p className="mt-1 text-warning">
-                            Remove: saves {fmtWeight(e.item.weightG)} and {fmtVolume(e.item.volumeL)}{" "}
+                            {n > 1 ? "Pack one fewer" : "Remove"}: saves{" "}
+                            {fmtWeight(fixEntry.item.weightG)} and {fmtVolume(fixEntry.item.volumeL)}{" "}
                             ·{" "}
-                            {e.impact === 0
+                            {fixEntry.impact === 0
                               ? "added extra"
-                              : e.impact === 1
+                              : fixEntry.impact === 1
                                 ? "needed for only one activity or as a spare"
                                 : "lower-impact spare compared with daily essentials"}
                           </p>
