@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WardrobeRouteImport } from './routes/wardrobe'
 import { Route as TripsIndexRouteImport } from './routes/trips.index'
+import { Route as TripsNewRouteImport } from './routes/trips.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,17 +35,24 @@ const TripsIndexRoute = TripsIndexRouteImport.update({
   path: '/trips/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TripsNewRoute = TripsNewRouteImport.update({
+  id: '/trips/new',
+  path: '/trips/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/trips/new': typeof TripsNewRoute
   '/trips/': typeof TripsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/trips/new': typeof TripsNewRoute
   '/trips': typeof TripsIndexRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/trips/new': typeof TripsNewRoute
   '/trips/': typeof TripsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/settings' | '/wardrobe' | '/trips/'
+  fullPaths: '/' | '/settings' | '/wardrobe' | '/trips/new' | '/trips/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/settings' | '/wardrobe' | '/trips'
-  id: '__root__' | '/' | '/settings' | '/wardrobe' | '/trips/'
+  to: '/' | '/settings' | '/wardrobe' | '/trips/new' | '/trips'
+  id: '__root__' | '/' | '/settings' | '/wardrobe' | '/trips/new' | '/trips/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRoute: typeof SettingsRoute
   WardrobeRoute: typeof WardrobeRoute
+  TripsNewRoute: typeof TripsNewRoute
   TripsIndexRoute: typeof TripsIndexRoute
 }
 
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TripsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trips/new': {
+      id: '/trips/new'
+      path: '/trips/new'
+      fullPath: '/trips/new'
+      preLoaderRoute: typeof TripsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRoute: SettingsRoute,
   WardrobeRoute: WardrobeRoute,
+  TripsNewRoute: TripsNewRoute,
   TripsIndexRoute: TripsIndexRoute,
 }
 export const routeTree = rootRouteImport
