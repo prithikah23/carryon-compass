@@ -1,22 +1,243 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
-import { Plus, Trash2, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Chips, meta } from '@/components/FitControls';
-import { CLIMATES, buildPackingTrip, newStop, type Stop, type PackingActivity } from '@/lib/packing';
-import { savePackingTrip, usePackingState } from '@/lib/packing-store';
-export const Route=createFileRoute('/trips/new')({head:()=>meta('Plan my trip','Choose destinations, climates and two bags. Build a packing plan with room for souvenirs.'),component:Setup});
-function Setup(){const state=usePackingState();const navigate=useNavigate();const [stops,setStops]=useState<Stop[]>(()=>[newStop()]);const [carry,setCarry]=useState(40);const [personal,setPersonal]=useState(18);const [limit,setLimit]=useState('10');const [souvenir,setSouvenir]=useState(1);const [errors,setErrors]=useState<Record<string,string>>({});
- const patch=(id:string,change:Partial<Stop>)=>setStops(s=>s.map(l=>l.id===id?{...l,...change}:l));
- const submit=(e:React.FormEvent)=>{e.preventDefault();const errs:Record<string,string>={};if(!stops.length)errs['stops']='Add at least one destination.';for(const l of stops){if(!l.name.trim())errs[l.id+'name']='Enter a destination.';if(!Number.isInteger(l.days)||l.days<1||l.days>90)errs[l.id+'days']='Enter 1 to 90 whole days.';}const kg=Number(limit);if(!Number.isFinite(kg)||kg<1||kg>40)errs['limit']='Enter a combined limit between 1 and 40 kg.';if(souvenir>=kg)errs['souvenir']='Leave some of the weight allowance for your packing.';setErrors(errs);if(Object.keys(errs).length)return;const trip=buildPackingTrip({id:crypto.randomUUID(),stops:stops.map(l=>({...l,name:l.name.trim()})),carryOnL:carry,personalL:personal,limitKg:kg,souvenirKg:souvenir,sample:false});savePackingTrip(trip);toast.success('Your packing plan is ready');navigate({to:'/trips/$tripId',params:{tripId:trip.id}});};
- const error=(key:string)=>errors[key]?<p id={key+'-error'} className="mt-2 text-destructive">{errors[key]}</p>:null;
- return <div className="mx-auto max-w-3xl px-5 py-10"><p className="mb-2 font-medium text-primary">YOUR NEXT ADVENTURE</p><h1 className="text-4xl font-semibold">Plan my trip</h1><form onSubmit={submit} noValidate className="mt-8 space-y-8">
- <section><h2 className="mb-4 text-2xl">Where are you going?</h2>{error('stops')}<div className="divide-y">{stops.map((l,i)=><fieldset key={l.id} className="py-5 first:pt-0"><legend className="sr-only">Destination {i+1}</legend><div className="mb-3 flex items-center justify-between"><h3 className="font-sans font-semibold">Stop {i+1}</h3><Button type="button" size="icon" variant="ghost" aria-label={`Remove stop ${i+1}`} onClick={()=>setStops(s=>s.filter(x=>x.id!==l.id))}><Trash2 aria-hidden /></Button></div><div className="grid grid-cols-[1fr_90px] gap-3"><div><Label htmlFor={l.id+'name'}>Destination</Label><Input id={l.id+'name'} placeholder="e.g. Atacama" value={l.name} onChange={e=>patch(l.id,{name:e.target.value})} aria-invalid={!!errors[l.id+'name']} aria-describedby={errors[l.id+'name']?l.id+'name-error':undefined}/>{error(l.id+'name')}</div><div><Label htmlFor={l.id+'days'}>Days</Label><Input id={l.id+'days'} type="number" min={1} max={90} value={Number.isNaN(l.days)?'':l.days} onChange={e=>patch(l.id,{days:e.target.value===''?NaN:Number(e.target.value)})} aria-invalid={!!errors[l.id+'days']} aria-describedby={errors[l.id+'days']?l.id+'days-error':undefined}/>{error(l.id+'days')}</div></div><div className="mt-4 space-y-4"><Chips label="Climate" options={CLIMATES} value={l.climate} onChange={climate=>patch(l.id,{climate})}/><Chips label="Rain" options={['none','some','lots'] as const} value={l.rain} onChange={rain=>patch(l.id,{rain})}/><div className="flex items-center gap-3"><Switch id={l.id+'cold'} checked={l.coldNights} onCheckedChange={coldNights=>patch(l.id,{coldNights})}/><Label htmlFor={l.id+'cold'}>Cold nights</Label></div><fieldset><legend className="mb-2 font-medium">Activities</legend><div className="flex flex-wrap gap-2">{(['city','hiking','beach','dinner'] as PackingActivity[]).map(a=><Button type="button" key={a} variant={l.activities.includes(a)?'secondary':'outline'} aria-pressed={l.activities.includes(a)} className="capitalize" onClick={()=>patch(l.id,{activities:l.activities.includes(a)?l.activities.filter(x=>x!==a):[...l.activities,a]})}>{a}</Button>)}</div></fieldset></div></fieldset>)}</div><Button type="button" variant="outline" disabled={stops.length>=4} onClick={()=>setStops(s=>[...s,newStop()])}><Plus aria-hidden/>Add destination</Button></section>
- <section className="border-t pt-7"><h2 className="mb-2 text-2xl">Your two bags</h2><p className="mb-5 text-muted-foreground">Typical sizes, check your airline.</p><div className="space-y-5"><Chips label="Carry-on" options={['Small 30 L','Standard 40 L','Large 45 L']} value={carry===30?'Small 30 L':carry===40?'Standard 40 L':'Large 45 L'} onChange={v=>setCarry(v.includes('30')?30:v.includes('40')?40:45)}/><Chips label="Personal item" options={['Small tote 12 L','Backpack 18 L','Large backpack 25 L']} value={personal===12?'Small tote 12 L':personal===18?'Backpack 18 L':'Large backpack 25 L'} onChange={v=>setPersonal(v.includes('12')?12:v.includes('18')?18:25)}/><div className="max-w-xs"><Label htmlFor="limit">Combined weight limit (kg)</Label><Input id="limit" inputMode="decimal" value={limit} onChange={e=>setLimit(e.target.value)} aria-invalid={!!errors['limit']}/>{error('limit')}</div></div></section>
- <section className="border-t pt-7"><div className="mb-5 flex justify-between"><Label id="souvenir" className="text-xl">Room for souvenirs</Label><span className="font-semibold text-accent">{souvenir.toFixed(1)} kg</span></div><Slider aria-labelledby="souvenir" min={0} max={5} step={.1} value={[souvenir]} onValueChange={v=>setSouvenir(v[0]??0)}/>{error('souvenir')}</section><Button type="submit" size="lg" className="w-full whitespace-normal">Build my packing plan<ArrowRight aria-hidden/></Button></form></div>;
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { Plus, Trash2, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { Chips, meta } from "@/components/FitControls";
+import {
+  CLIMATES,
+  buildPackingTrip,
+  newStop,
+  type Stop,
+  type PackingActivity,
+} from "@/lib/packing";
+import { savePackingTrip, usePackingState } from "@/lib/packing-store";
+export const Route = createFileRoute("/trips/new")({
+  head: () =>
+    meta(
+      "Plan my trip",
+      "Choose destinations, climates and two bags. Build a packing plan with room for souvenirs.",
+    ),
+  component: Setup,
+});
+function Setup() {
+  const state = usePackingState();
+  const navigate = useNavigate();
+  const [stops, setStops] = useState<Stop[]>(() => [newStop()]);
+  const [carry, setCarry] = useState(40);
+  const [personal, setPersonal] = useState(18);
+  const [limit, setLimit] = useState("10");
+  const [souvenir, setSouvenir] = useState(1);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const patch = (id: string, change: Partial<Stop>) =>
+    setStops((s) => s.map((l) => (l.id === id ? { ...l, ...change } : l)));
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!stops.length) errs["stops"] = "Add at least one destination.";
+    for (const l of stops) {
+      if (!l.name.trim()) errs[l.id + "name"] = "Enter a destination.";
+      if (!Number.isInteger(l.days) || l.days < 1 || l.days > 90)
+        errs[l.id + "days"] = "Enter 1 to 90 whole days.";
+    }
+    const kg = Number(limit);
+    if (!Number.isFinite(kg) || kg < 1 || kg > 40)
+      errs["limit"] = "Enter a combined limit between 1 and 40 kg.";
+    if (souvenir >= kg) errs["souvenir"] = "Leave some of the weight allowance for your packing.";
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    const trip = buildPackingTrip({
+      id: crypto.randomUUID(),
+      stops: stops.map((l) => ({ ...l, name: l.name.trim() })),
+      carryOnL: carry,
+      personalL: personal,
+      limitKg: kg,
+      souvenirKg: souvenir,
+      sample: false,
+    });
+    savePackingTrip(trip);
+    toast.success("Your packing plan is ready");
+    navigate({ to: "/trips/$tripId", params: { tripId: trip.id } });
+  };
+  const error = (key: string) =>
+    errors[key] ? (
+      <p id={key + "-error"} className="mt-2 text-destructive">
+        {errors[key]}
+      </p>
+    ) : null;
+  return (
+    <div className="mx-auto max-w-3xl px-5 py-10">
+      <p className="mb-2 font-medium text-primary">YOUR NEXT ADVENTURE</p>
+      <h1 className="text-4xl font-semibold">Plan my trip</h1>
+      <form onSubmit={submit} noValidate className="mt-8 space-y-8">
+        <section>
+          <h2 className="mb-4 text-2xl">Where are you going?</h2>
+          {error("stops")}
+          <div className="divide-y">
+            {stops.map((l, i) => (
+              <fieldset key={l.id} className="py-5 first:pt-0">
+                <legend className="sr-only">Destination {i + 1}</legend>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-sans font-semibold">Stop {i + 1}</h3>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Remove stop ${i + 1}`}
+                    onClick={() => setStops((s) => s.filter((x) => x.id !== l.id))}
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-[1fr_90px] gap-3">
+                  <div>
+                    <Label htmlFor={l.id + "name"}>Destination</Label>
+                    <Input
+                      id={l.id + "name"}
+                      placeholder="e.g. Atacama"
+                      value={l.name}
+                      onChange={(e) => patch(l.id, { name: e.target.value })}
+                      aria-invalid={!!errors[l.id + "name"]}
+                      aria-describedby={errors[l.id + "name"] ? l.id + "name-error" : undefined}
+                    />
+                    {error(l.id + "name")}
+                  </div>
+                  <div>
+                    <Label htmlFor={l.id + "days"}>Days</Label>
+                    <Input
+                      id={l.id + "days"}
+                      type="number"
+                      min={1}
+                      max={90}
+                      value={Number.isNaN(l.days) ? "" : l.days}
+                      onChange={(e) =>
+                        patch(l.id, { days: e.target.value === "" ? NaN : Number(e.target.value) })
+                      }
+                      aria-invalid={!!errors[l.id + "days"]}
+                      aria-describedby={errors[l.id + "days"] ? l.id + "days-error" : undefined}
+                    />
+                    {error(l.id + "days")}
+                  </div>
+                </div>
+                <div className="mt-4 space-y-4">
+                  <Chips
+                    label="Climate"
+                    options={CLIMATES}
+                    value={l.climate}
+                    onChange={(climate) => patch(l.id, { climate })}
+                  />
+                  <Chips
+                    label="Rain"
+                    options={["none", "some", "lots"] as const}
+                    value={l.rain}
+                    onChange={(rain) => patch(l.id, { rain })}
+                  />
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      id={l.id + "cold"}
+                      checked={l.coldNights}
+                      onCheckedChange={(coldNights) => patch(l.id, { coldNights })}
+                    />
+                    <Label htmlFor={l.id + "cold"}>Cold nights</Label>
+                  </div>
+                  <fieldset>
+                    <legend className="mb-2 font-medium">Activities</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {(["city", "hiking", "beach", "dinner"] as PackingActivity[]).map((a) => (
+                        <Button
+                          type="button"
+                          key={a}
+                          variant={l.activities.includes(a) ? "secondary" : "outline"}
+                          aria-pressed={l.activities.includes(a)}
+                          className="capitalize"
+                          onClick={() =>
+                            patch(l.id, {
+                              activities: l.activities.includes(a)
+                                ? l.activities.filter((x) => x !== a)
+                                : [...l.activities, a],
+                            })
+                          }
+                        >
+                          {a}
+                        </Button>
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
+              </fieldset>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={stops.length >= 4}
+            onClick={() => setStops((s) => [...s, newStop()])}
+          >
+            <Plus aria-hidden />
+            Add destination
+          </Button>
+        </section>
+        <section className="border-t pt-7">
+          <h2 className="mb-2 text-2xl">Your two bags</h2>
+          <p className="mb-5 text-muted-foreground">Typical sizes, check your airline.</p>
+          <div className="space-y-5">
+            <Chips
+              label="Carry-on"
+              options={["Small 30 L", "Standard 40 L", "Large 45 L"]}
+              value={carry === 30 ? "Small 30 L" : carry === 40 ? "Standard 40 L" : "Large 45 L"}
+              onChange={(v) => setCarry(v.includes("30") ? 30 : v.includes("40") ? 40 : 45)}
+            />
+            <Chips
+              label="Personal item"
+              options={["Small tote 12 L", "Backpack 18 L", "Large backpack 25 L"]}
+              value={
+                personal === 12
+                  ? "Small tote 12 L"
+                  : personal === 18
+                    ? "Backpack 18 L"
+                    : "Large backpack 25 L"
+              }
+              onChange={(v) => setPersonal(v.includes("12") ? 12 : v.includes("18") ? 18 : 25)}
+            />
+            <div className="max-w-xs">
+              <Label htmlFor="limit">Combined weight limit (kg)</Label>
+              <Input
+                id="limit"
+                inputMode="decimal"
+                value={limit}
+                onChange={(e) => setLimit(e.target.value)}
+                aria-invalid={!!errors["limit"]}
+              />
+              {error("limit")}
+            </div>
+          </div>
+        </section>
+        <section className="border-t pt-7">
+          <div className="mb-5 flex justify-between">
+            <Label id="souvenir" className="text-xl">
+              Room for souvenirs
+            </Label>
+            <span className="font-semibold text-accent">{souvenir.toFixed(1)} kg</span>
+          </div>
+          <Slider
+            aria-labelledby="souvenir"
+            min={0}
+            max={5}
+            step={0.1}
+            value={[souvenir]}
+            onValueChange={(v) => setSouvenir(v[0] ?? 0)}
+          />
+          {error("souvenir")}
+        </section>
+        <Button type="submit" size="lg" className="w-full whitespace-normal">
+          Build my packing plan
+          <ArrowRight aria-hidden />
+        </Button>
+      </form>
+    </div>
+  );
 }
