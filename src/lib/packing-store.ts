@@ -8,6 +8,19 @@ const server: State = { loaded: false, trip: null };
 let state: State | null = null;
 const listeners = new Set<() => void>();
 const KEY = "carry-on-compass:fit:v2";
+/** Older saves could split copies of one item across bags; keep every copy with the first one. */
+function mergeCopies(trip: PackingTrip): PackingTrip {
+  const bagOf = new Map<string, PackingTrip["entries"][number]["bag"]>();
+  const entries = trip.entries.map((e) => {
+    const bag = bagOf.get(e.item.name);
+    if (bag === undefined) {
+      bagOf.set(e.item.name, e.bag);
+      return e;
+    }
+    return bag === e.bag ? e : { ...e, bag };
+  });
+  return { ...trip, entries };
+}
 function get(): State {
   if (state) return state;
   try {
@@ -22,7 +35,7 @@ function get(): State {
               Array.isArray(data.stops) &&
               Array.isArray(data.entries) &&
               Number.isFinite(data.limitKg)
-            ? data
+            ? mergeCopies(data)
             : freshSample(),
     };
   } catch {
