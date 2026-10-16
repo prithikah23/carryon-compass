@@ -46,7 +46,7 @@ import { usePackingState, savePackingTrip } from "@/lib/packing-store";
 import { fmtWeight, fmtVolume } from "@/lib/format";
 import { CATEGORIES, bagLabel, type BagId, type Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
-export const Route = createFileRoute("/trips/")({
+export const Route = createFileRoute("/trips/$tripId")({
   head: () =>
     meta(
       "Packing plan",
