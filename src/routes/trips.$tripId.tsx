@@ -35,12 +35,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ItemIcon } from "@/components/ItemIcon";
-import { meta } from "@/components/FitControls";
+import { Chips, meta } from "@/components/FitControls";
 import {
   findItems,
   freshSample,
   totals,
   suggestedRemovals,
+  suggestedFixes,
+  changeLaundry,
+  LAUNDRY_OPTIONS,
   outfitIdeas,
   addedItemReason,
   type PackingTrip,
@@ -144,6 +147,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
   const [confirm, setConfirm] = useState<"start" | "sample" | null>(null);
   const t = totals(trip, returning);
   const fixes = suggestedRemovals(trip);
+  const rankedFixes = suggestedFixes(trip);
   const fits = !t.overG && !t.overCarryL && !t.overPersonalL;
   const done = trip.entries.filter((e) => e.packed).length;
   const patch = (id: string, change: Partial<PackItem>) =>
@@ -191,6 +195,9 @@ function Plan({ trip }: { trip: PackingTrip }) {
           </Link>
         </Button>
       </div>
+      <div className="mb-7">
+        <Chips label="Can you do laundry on this trip?" options={LAUNDRY_OPTIONS} value={trip.laundry ?? "Quick sink wash"} onChange={(laundry) => savePackingTrip(changeLaundry(trip, laundry))} />
+      </div>
       <section
         className={cn("border-y py-6", fits ? "border-success/30" : "border-destructive/30")}
         aria-live="polite"
@@ -226,6 +233,14 @@ function Plan({ trip }: { trip: PackingTrip }) {
             allowance.
           </p>
         )}
+        {rankedFixes.length > 0 && <ol className="mt-4 space-y-2">
+          {rankedFixes.map((fix) => <li key={fix.kind === "remove" ? fix.id : "laundry"}>
+            <Button variant="outline" className="h-auto min-h-11 max-w-full whitespace-normal text-left" onClick={() => {
+              if (fix.kind === "laundry") savePackingTrip(changeLaundry(trip, "Quick sink wash"));
+              else savePackingTrip({ ...trip, entries: trip.entries.filter((e) => e.item.id !== fix.id) });
+            }}>{fix.label} to save {fix.kind === "laundry" ? "about " : ""}{fmtWeight(fix.savedG)}</Button>
+          </li>)}
+        </ol>}
       </section>
       <section className="py-7">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
