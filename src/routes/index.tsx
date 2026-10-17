@@ -48,7 +48,7 @@ function Home() {
           </p>
         </div>
         <svg
-          className="travel-bags pointer-events-none absolute bottom-5 right-4 h-72 w-60 text-primary/20 lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-[460px] lg:w-[395px] lg:-translate-y-1/2 lg:text-primary/65"
+          className="travel-bags pointer-events-none absolute bottom-5 right-4 hidden h-72 w-60 text-primary/20 sm:block lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-[460px] lg:w-[395px] lg:-translate-y-1/2 lg:text-primary/65"
           viewBox="0 0 240 280"
           fill="none"
           stroke="currentColor"
