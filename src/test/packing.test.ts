@@ -8,8 +8,8 @@ import {
   buildPackingTrip,
 } from "@/lib/packing";
 describe("Fresh packing journey rules", () => {
-  it("has forty essentials and synonym search", () => {
-    expect(TRAVEL_CATALOG).toHaveLength(40);
+  it("has forty essentials plus five comfort/grooming items and synonym search", () => {
+    expect(TRAVEL_CATALOG).toHaveLength(45);
     expect(findItems("jacket").map((i) => i.name)).toEqual(
       expect.arrayContaining(["Fleece", "Puffer jacket", "Rain shell"]),
     );
