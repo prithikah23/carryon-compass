@@ -8,16 +8,18 @@ import {
   buildPackingTrip,
 } from "@/lib/packing";
 describe("Fresh packing journey rules", () => {
-  it("has forty essentials plus five comfort/grooming items and synonym search", () => {
-    expect(TRAVEL_CATALOG).toHaveLength(45);
+  it("has the expanded travel catalog and synonym search", () => {
+    expect(TRAVEL_CATALOG).toHaveLength(53);
     expect(findItems("jacket").map((i) => i.name)).toEqual(
       expect.arrayContaining(["Fleece", "Puffer jacket", "Rain shell"]),
     );
   });
   it("scales basics and reuses layers across the sample stops", () => {
     const trip = freshSample();
-    expect(trip.entries.filter((e) => e.item.name === "Underwear")).toHaveLength(7);
-    expect(trip.entries.filter((e) => e.item.name === "Socks")).toHaveLength(7);
+    expect(trip.entries.filter((e) => e.item.name === "Underwear")).toHaveLength(15);
+    expect(trip.entries.filter((e) => e.item.name === "Socks")).toHaveLength(15);
+    expect(trip.entries.filter((e) => e.item.name === "Sleepwear")).toHaveLength(2);
+    expect(totals(trip).overG).toBe(0);
     expect(trip.entries.filter((e) => e.item.name === "T-shirt")).toHaveLength(5);
     expect(trip.entries.filter((e) => e.item.name === "Fleece")).toHaveLength(1);
     expect(trip.entries.find((e) => e.item.name === "Fleece")?.reason).toContain(
@@ -66,6 +68,6 @@ describe("Fresh packing journey rules", () => {
     });
     expect(trip.entries.some((e) => e.item.name === "Swimwear")).toBe(true);
     expect(trip.entries.some((e) => e.item.name === "Puffer jacket")).toBe(false);
-    expect(trip.entries.filter((e) => e.item.name === "Underwear")).toHaveLength(2);
+    expect(trip.entries.filter((e) => e.item.name === "Underwear")).toHaveLength(3);
   });
 });
