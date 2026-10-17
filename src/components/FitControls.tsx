@@ -26,7 +26,7 @@ export function Chips<T extends string | number>({
             className={cn("min-h-11 border-2 px-3 capitalize", o === value ? "border-primary" : "border-border")}
           >
             <Check aria-hidden className={cn("size-4 shrink-0", o !== value && "invisible")} />
-            {o}
+            {typeof o === "string" ? o.charAt(0).toUpperCase() + o.slice(1) : o}
           </Button>
         ))}
       </div>
