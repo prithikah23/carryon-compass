@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { freshSample, type PackingTrip } from "./packing";
+import { freshSample, PACKING_RULES_VERSION, type PackingTrip } from "./packing";
 interface State {
   loaded: boolean;
   trip: PackingTrip | null;
@@ -19,7 +19,7 @@ function mergeCopies(trip: PackingTrip): PackingTrip {
     }
     return bag === e.bag ? e : { ...e, bag };
   });
-  return { ...trip, entries };
+  return { ...trip, laundry: trip.laundry ?? "Quick sink wash", entries };
 }
 function get(): State {
   if (state) return state;
@@ -35,7 +35,7 @@ function get(): State {
               Array.isArray(data.stops) &&
               Array.isArray(data.entries) &&
               Number.isFinite(data.limitKg)
-            ? data.sample && data.rulesVersion !== 3
+            ? data.sample && data.rulesVersion !== PACKING_RULES_VERSION
               ? freshSample()
               : mergeCopies(data)
             : freshSample(),

@@ -3,6 +3,9 @@ import type { Item, BagId } from "./types";
 export const CLIMATES = ["Hot", "Warm", "Mild", "Cool", "Freezing"] as const;
 export type Climate = (typeof CLIMATES)[number];
 export type PackingActivity = "city" | "hiking" | "beach" | "dinner";
+export const LAUNDRY_OPTIONS = ["No washing", "Quick sink wash", "Laundry available"] as const;
+export type LaundryOption = (typeof LAUNDRY_OPTIONS)[number];
+export const PACKING_RULES_VERSION = 4;
 export interface Stop {
   id: string;
   name: string;
@@ -31,6 +34,7 @@ export interface PackingTrip {
   sample: boolean;
   rulesVersion?: number;
   weightCheck?: boolean;
+  laundry?: LaundryOption;
 }
 const names = [
   "T-shirt",
@@ -188,28 +192,39 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   const freezing = input.stops.filter((s) => s.climate === "Freezing");
   const rain = input.stops.filter((s) => s.rain !== "none");
   const sun = input.stops.filter((s) => s.climate === "Hot" || s.climate === "Warm");
-  const basics = Math.min(7, days);
-  const dailyReason = days > 7
-    ? `Plan to rewash once · trip is ${days} days`
-    : `One per day, trip is ${days} days`;
+  const laundry = input.laundry ?? "Quick sink wash";
+  const basics = Math.min(laundry === "No washing" ? 14 : laundry === "Quick sink wash" ? 5 : 7, days);
+  const washReason = laundry === "No washing"
+    ? days > 14 ? "No washing planned · 14-pair carry-on cap; bring more or arrange washing" : "One per day, no washing planned"
+    : laundry === "Quick sink wash" ? "Sink-wash every few days" : "Laundry available · wash weekly";
+  const dailyReason = `${washReason} · trip is ${days} days`;
   add("Underwear", dailyReason, basics, true, 5);
   add("Socks", dailyReason, basics, true, 5);
-  // Dressier and long-sleeve tops share the same five-top allowance.
-  const topCount = Math.min(5, Math.ceil(days / 2));
+  // Dressier and long-sleeve tops share the laundry-dependent top allowance.
+  const topCount = Math.min(laundry === "No washing" ? 6 : 4, Math.ceil(days / 2));
   const thermalCount = freezing.length ? 1 : 0;
   const dressyCount = dinner.length && topCount > 1 ? 1 : 0;
   const layerCount = cold.length && topCount - dressyCount - thermalCount > 1 ? 1 : 0;
-  add("T-shirt", `Rotate across ${days} days${days > 7 ? " · Plan to rewash once" : ""}`, topCount - dressyCount - layerCount - thermalCount, false, 2);
-  if (layerCount) add("Long-sleeve shirt", `Cool days or cold nights in ${destinations(cold)}`, 1, false, 3);
-  if (dressyCount) add("Linen shirt", `Dinner out in ${destinations(dinner)}`, 1, false, 2);
-  if (hiking.length) add("Hiking pants", `Hiking in ${destinations(hiking)}`, 1, false, 3);
-  if (city.length || dinner.length) add("Jeans", `City days${dinner.length ? " and dinner" : ""} in ${destinations(input.stops.filter((s) => s.activities.includes("city") || s.activities.includes("dinner")))}`, 1, false, 3);
-  if (beach.length) add("Shorts", `Beach days in ${destinations(beach)}`, 1, false, 2);
+  const topReason = `Worn 2 to 3 times · ${laundry === "No washing" ? "No washing planned" : washReason} · ${days} days`;
+  add("T-shirt", `${topReason} in ${all}`, Math.max(0, topCount - dressyCount - layerCount - thermalCount), false, 2);
+  if (layerCount) add("Long-sleeve shirt", `Cool days or cold nights in ${destinations(cold)} · ${topReason}`, 1, false, 3);
+  if (dressyCount) add("Linen shirt", `Dinner out in ${destinations(dinner)} · ${topReason}`, 1, false, 2);
+  const bottomCap = laundry === "No washing" && days > 7 ? 3 : 2;
+  const bottomReason = `Worn 2 to 3 times between washes${laundry === "No washing" ? "" : ` · ${washReason}`}`;
+  const addBottom = (name: string, reason: string, impact = 3) => {
+    if (entries.filter((e) => e.item.category === "bottom").length < bottomCap)
+      add(name, `${reason} · ${laundry === "No washing" ? "Rewear across the trip, no washing planned" : bottomReason}`, 1, false, impact);
+  };
+  if (hiking.length) addBottom("Hiking pants", `Hiking in ${destinations(hiking)}`);
+  if (beach.length) addBottom("Shorts", `Beach days in ${destinations(beach)}`, 2);
+  if (city.length || dinner.length) addBottom("Jeans", `City days${dinner.length ? " and dinner" : ""} in ${destinations(input.stops.filter((s) => s.activities.includes("city") || s.activities.includes("dinner")))}`);
   if (!hiking.length && !city.length && !dinner.length && !beach.length)
-    add("Jeans", `Everyday wear in ${all}`, 1, false, 3);
+    addBottom("Jeans", `Everyday wear in ${all}`);
   // A second bottom is the personal-item backup, not a third daily outfit.
   if (entries.filter((e) => e.item.category === "bottom").length < 2)
-    add("Leggings", `Backup outfit for ${all} in case your carry-on is gate-checked`, 1, false, 1);
+    addBottom("Leggings", `Backup outfit for ${all} in case your carry-on is gate-checked`, 1);
+  if (bottomCap === 3 && entries.filter((e) => e.item.category === "bottom").length < 3)
+    addBottom("Chinos", `Extra rotation for ${days} days in ${all}`, 2);
   add("Sleepwear", `Rotate over ${days} nights in ${all}`, days > 7 ? 2 : 1, true, 5);
   add("Toiletry kit", `Daily washing and grooming for ${days} days in ${all}`, 1, true, 5);
   add("Phone charger", `Phone charging on every leg: ${all}`, 1, true, 5);
@@ -281,7 +296,32 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
     )
       for (const e of grp) e.bag = "personal";
   }
-  return { ...input, rulesVersion: 3, entries };
+  return { ...input, laundry, rulesVersion: PACKING_RULES_VERSION, entries };
+}
+/** Change laundry-dependent pieces only; retain other items and surviving checklist/bag edits. */
+export function changeLaundry(trip: PackingTrip, laundry: LaundryOption): PackingTrip {
+  const previous = buildPackingTrip(trip);
+  const next = buildPackingTrip({ ...trip, laundry });
+  const affected = (e: PackItem) => ["Underwear", "Socks"].includes(e.item.name) || ["top", "bottom"].includes(e.item.category);
+  const names = new Set([...previous.entries, ...next.entries].filter(affected).map((e) => e.item.name));
+  const entries = trip.entries.filter((e) => !names.has(e.item.name));
+  const usedIds = new Set(trip.entries.map((e) => e.item.id));
+  for (const name of names) {
+    const current = trip.entries.filter((e) => e.item.name === name);
+    const target = next.entries.filter((e) => e.item.name === name);
+    // An explicitly removed group stays removed, rather than reappearing on a laundry change.
+    if (!current.length && previous.entries.some((e) => e.item.name === name)) continue;
+    for (let n = 0; n < target.length; n++) {
+      const fresh = target[n];
+      if (!fresh) continue;
+      const saved = current[n];
+      let id = `${trip.id}-laundry-${name}-${n}`;
+      while (usedIds.has(id)) id += "-new";
+      usedIds.add(id);
+      entries.push(saved ? { ...saved, reason: fresh.reason } : { ...fresh, item: { ...fresh.item, id }, bag: current[0]?.bag ?? fresh.bag });
+    }
+  }
+  return { ...trip, laundry, rulesVersion: PACKING_RULES_VERSION, entries };
 }
 export function totals(trip: PackingTrip, returning = false) {
   const bags = { carryOn: { g: 0, l: 0 }, personal: { g: 0, l: 0 } };
@@ -350,7 +390,24 @@ export function suggestedRemovals(trip: PackingTrip): string[] {
       : candidates
           .sort((a, b) => a.impact - b.impact || b.item.weightG - a.item.weightG)
           .slice(0, 3)
-  ).map((e) => e.item.id);
+  ).sort((a, b) => b.item.weightG - a.item.weightG).map((e) => e.item.id);
+}
+export type PackingFix = { kind: "remove"; id: string; label: string; savedG: number } | { kind: "laundry"; label: string; savedG: number };
+export function suggestedFixes(trip: PackingTrip): PackingFix[] {
+  const t = totals(trip);
+  if (!t.overG && !t.overCarryL && !t.overPersonalL) return [];
+  const ids = suggestedRemovals(trip);
+  const fixes: PackingFix[] = ids.flatMap((id) => {
+    const e = trip.entries.find((entry) => entry.item.id === id);
+    return e ? [{ kind: "remove" as const, id, label: `Pack one fewer ${e.item.name}`, savedG: e.item.weightG }] : [];
+  });
+  if ((trip.laundry ?? "Quick sink wash") !== "Quick sink wash") {
+    const switched = totals(changeLaundry(trip, "Quick sink wash"));
+    const savedG = t.usedG - switched.usedG;
+    if (savedG > 0 && (switched.overG < t.overG || switched.overCarryL < t.overCarryL || switched.overPersonalL < t.overPersonalL))
+      fixes.push({ kind: "laundry", label: "Switch to Quick sink wash", savedG });
+  }
+  return fixes.sort((a, b) => b.savedG - a.savedG);
 }
 export function newStop(): Stop {
   return {
@@ -371,6 +428,7 @@ export function freshSample(): PackingTrip {
     limitKg: 10,
     souvenirKg: 1,
     sample: true,
+    laundry: "Quick sink wash",
     stops: [
       {
         id: "ba",

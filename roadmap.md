@@ -9,3 +9,6 @@
 - [x] Realistic capped quantities, activity-needed items and sample regeneration
 - [x] Visible trip-specific reasons without a redesign
 - [x] Test sample fit and live verdict, meters, outfits and worn updates
+- [x] Add laundry choices and mode-specific quantities/reasons without redesigning
+- [x] Rank over-limit fixes by weight saved, including useful laundry switches
+- [x] Verify sample fit, live laundry changes, persistence and narrow-screen journey

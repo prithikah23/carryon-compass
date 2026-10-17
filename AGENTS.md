@@ -19,3 +19,4 @@
 - A shared ItemIcon renders category/name-specific line illustrations using each item's stored color so wardrobe and trip displays stay consistent.
 - Generated trips carry a packing-rules version; obsolete saved samples regenerate on load while personal trips and current sample edits remain untouched, so revised defaults appear without discarding user work.
 - Airline presets use a null weight allowance for size-only rules; trips persist an explicit weight-check flag so no artificial weight ceiling is enforced while older numeric plans retain their checks.
+- Laundry changes and ranked weight-saving fixes are pure packing-module operations; update only generated laundry-dependent groups while preserving surviving bag/checklist edits and unrelated items, so live controls do not discard personal packing work.

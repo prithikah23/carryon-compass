@@ -12,6 +12,8 @@ import { Chips, meta } from "@/components/FitControls";
 import {
   AIRLINES,
   CLIMATES,
+  LAUNDRY_OPTIONS,
+  type LaundryOption,
   buildPackingTrip,
   newStop,
   type Stop,
@@ -42,6 +44,7 @@ function Builder() {
   const [weightCheck, setWeightCheck] = useState(preset?.limitKg !== null);
   const [limit, setLimit] = useState(String(preset?.limitKg ?? 10));
   const [souvenir, setSouvenir] = useState(1);
+  const [laundry, setLaundry] = useState<LaundryOption>("Quick sink wash");
   const [airline, setAirline] = useState(preset?.name ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const patch = (id: string, change: Partial<Stop>) =>
@@ -69,6 +72,7 @@ function Builder() {
       limitKg: weightCheck ? kg : 10,
       weightCheck,
       souvenirKg: souvenir,
+      laundry,
       sample: false,
     });
     savePackingTrip(trip);
@@ -194,6 +198,9 @@ function Builder() {
             <Plus aria-hidden />
             Add destination
           </Button>
+        </section>
+        <section className="border-t pt-7">
+          <Chips label="Can you do laundry on this trip?" options={LAUNDRY_OPTIONS} value={laundry} onChange={setLaundry} />
         </section>
         <section className="border-t pt-7">
           <h2 className="mb-2 text-2xl">Your two bags</h2>
