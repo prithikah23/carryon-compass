@@ -1,17 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Plus, Trash2, ArrowRight, Check } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Plus, Trash2, ArrowRight, Check, CalendarIcon } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { StopClimate } from "@/components/StopClimate";
+import { stopDates, todayISO } from "@/lib/climate";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Chips, meta } from "@/components/FitControls";
 import {
   AIRLINES,
-  CLIMATES,
   LAUNDRY_OPTIONS,
   type LaundryOption,
   buildPackingTrip,
@@ -38,6 +41,9 @@ function Setup() {
 function Builder() {
   const navigate = useNavigate();
   const [stops, setStops] = useState<Stop[]>(() => [newStop()]);
+  const [startDate, setStartDate] = useState(todayISO);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const dates = stopDates(startDate, stops);
   const preset = AIRLINES.find((a) => a.name === Route.useSearch().airline);
   const [carry, setCarry] = useState<number>(preset?.carryOnL ?? 40);
   const [personal, setPersonal] = useState<number>(preset?.personalL ?? 18);
@@ -47,8 +53,8 @@ function Builder() {
   const [laundry, setLaundry] = useState<LaundryOption>("Quick sink wash");
   const [airline, setAirline] = useState(preset?.name ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const patch = (id: string, change: Partial<Stop>) =>
-    setStops((s) => s.map((l) => (l.id === id ? { ...l, ...change } : l)));
+  const patch = useCallback((id: string, change: Partial<Stop>) =>
+    setStops((s) => s.map((l) => (l.id === id ? { ...l, ...change } : l))), []);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
@@ -66,7 +72,9 @@ function Builder() {
     if (Object.keys(errs).length) return;
     const trip = buildPackingTrip({
       id: crypto.randomUUID(),
-      stops: stops.map((l) => ({ ...l, name: l.name.trim() })),
+      startDate,
+      stops: stops.map((l, i) => ({ ...l, name: l.name.trim(), startDate: dates[i]?.start, endDate: dates[i]?.end,
+        weather: l.weather?.key.endsWith(`:${dates[i]?.start}:${dates[i]?.end}`) ? l.weather : undefined })),
       carryOnL: carry,
       personalL: personal,
       limitKg: weightCheck ? kg : 10,
@@ -92,6 +100,13 @@ function Builder() {
       <form onSubmit={submit} noValidate className="mt-8 space-y-8">
         <section>
           <h2 className="mb-4 text-2xl">Where are you going?</h2>
+          <div className="mb-6 max-w-sm">
+            <Label htmlFor="trip-start">Trip start date</Label>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild><Button id="trip-start" type="button" variant="outline" className="mt-1 min-h-11 w-full justify-start font-normal"><CalendarIcon aria-hidden />{format(parseISO(startDate), "MMM d, yyyy")}</Button></PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={parseISO(startDate)} defaultMonth={parseISO(startDate)} onSelect={(date) => { if (date) { setStartDate(format(date, "yyyy-MM-dd")); setCalendarOpen(false); } }} className="pointer-events-auto [--cell-size:2.75rem]" /></PopoverContent>
+            </Popover>
+          </div>
           {error("stops")}
           <div className="divide-y">
             {stops.map((l, i) => (
@@ -110,19 +125,8 @@ function Builder() {
                   </Button>
                 </div>
                 <div className="grid grid-cols-[1fr_90px] gap-3">
-                  <div>
-                    <Label htmlFor={l.id + "name"}>Destination</Label>
-                    <Input
-                      id={l.id + "name"}
-                      placeholder="e.g. Atacama"
-                      value={l.name}
-                      onChange={(e) => patch(l.id, { name: e.target.value })}
-                      aria-invalid={!!errors[l.id + "name"]}
-                      aria-describedby={errors[l.id + "name"] ? l.id + "name-error" : undefined}
-                    />
-                    {error(l.id + "name")}
-                  </div>
-                  <div>
+                  <StopClimate stop={l} dates={dates[i]} patch={patch} invalid={!!errors[l.id + "name"]} describedBy={errors[l.id + "name"] ? l.id + "name-error" : undefined} />
+                  <div className="order-2">
                     <Label htmlFor={l.id + "days"}>Days</Label>
                     <Input
                       id={l.id + "days"}
@@ -138,29 +142,9 @@ function Builder() {
                     />
                     {error(l.id + "days")}
                   </div>
+                  <div className="order-4 col-span-2">{error(l.id + "name")}</div>
                 </div>
                 <div className="mt-4 space-y-4">
-                  <Chips
-                    label="Climate"
-                    options={CLIMATES}
-                    value={l.climate}
-                    onChange={(climate) => patch(l.id, { climate })}
-                  />
-                  <Chips
-                    label="Rain"
-                    options={["none", "some", "lots"] as const}
-                    value={l.rain}
-                    onChange={(rain) => patch(l.id, { rain })}
-                  />
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      className="relative after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
-                      id={l.id + "cold"}
-                      checked={l.coldNights}
-                      onCheckedChange={(coldNights) => patch(l.id, { coldNights })}
-                    />
-                    <Label htmlFor={l.id + "cold"}>Cold nights</Label>
-                  </div>
                   <fieldset>
                     <legend className="mb-2 font-medium">Activities</legend>
                     <div className="flex flex-wrap gap-2">
@@ -179,7 +163,7 @@ function Builder() {
                             })
                           }
                         >
-                          <Check aria-hidden className={`size-4 shrink-0 ${l.activities.includes(a) ? "" : "invisible"}`} />
+                          {l.activities.includes(a) && <Check aria-hidden className="size-4 shrink-0" />}
                           {a}
                         </Button>
                       ))}

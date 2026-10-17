@@ -25,7 +25,7 @@ export function Chips<T extends string | number>({
             onClick={() => onChange(o)}
             className={cn("min-h-11 border-2 px-3 capitalize", o === value ? "border-primary" : "border-border")}
           >
-            <Check aria-hidden className={cn("size-4 shrink-0", o !== value && "invisible")} />
+            {o === value && <Check aria-hidden className="size-4 shrink-0" />}
             {typeof o === "string" ? o.charAt(0).toUpperCase() + o.slice(1) : o}
           </Button>
         ))}

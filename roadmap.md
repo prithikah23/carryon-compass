@@ -12,3 +12,6 @@
 - [x] Add laundry choices and mode-specific quantities/reasons without redesigning
 - [x] Rank over-limit fixes by weight saved, including useful laundry switches
 - [x] Verify sample fit, live laundry changes, persistence and narrow-screen journey
+- [x] Add dated stops, place search and editable Open-Meteo climate suggestions
+- [x] Persist climate results, keep sample offline, update privacy disclosure
+- [x] Test climate thresholds, dated lookup and unavailable-weather manual setup
