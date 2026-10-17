@@ -16,7 +16,7 @@ function Home() {
   return (
     <div className="mx-auto max-w-6xl px-5">
       <section className="home-travel relative flex min-h-[590px] flex-col justify-center overflow-hidden py-14">
-        <div className="relative z-10 max-w-2xl">
+        <div className="relative z-10 max-w-2xl lg:max-w-[58%]">
           <p className="mb-5 flex items-center gap-2 font-medium text-primary">
             <Compass className="size-5" aria-hidden />
             TWO BAGS. EVERY CLIMATE.
@@ -48,7 +48,7 @@ function Home() {
           </p>
         </div>
         <svg
-          className="travel-bags pointer-events-none absolute bottom-5 right-4 h-72 w-60 text-primary/20"
+          className="travel-bags pointer-events-none absolute bottom-5 right-4 hidden h-72 w-60 text-primary/20 sm:block lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-[460px] lg:w-[395px] lg:-translate-y-1/2 lg:text-primary/65"
           viewBox="0 0 240 280"
           fill="none"
           stroke="currentColor"
