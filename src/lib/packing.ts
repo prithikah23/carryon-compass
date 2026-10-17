@@ -189,15 +189,16 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   const sun = input.stops.filter((s) => s.climate === "Hot" || s.climate === "Warm");
   const basics = Math.min(7, days);
   const dailyReason = days > 7
-    ? `Plan to rewash once · Rewash once, trip is ${days} days`
+    ? `Plan to rewash once · trip is ${days} days`
     : `One per day, trip is ${days} days`;
   add("Underwear", dailyReason, basics, true, 5);
   add("Socks", dailyReason, basics, true, 5);
   // Dressier and long-sleeve tops share the same five-top allowance.
   const topCount = Math.min(5, Math.ceil(days / 2));
+  const thermalCount = freezing.length ? 1 : 0;
   const dressyCount = dinner.length && topCount > 1 ? 1 : 0;
-  const layerCount = cold.length && topCount - dressyCount > 1 ? 1 : 0;
-  add("T-shirt", `Rotate across ${days} days in ${all}${days > 7 ? " · Plan to rewash once" : ""}`, topCount - dressyCount - layerCount, false, 2);
+  const layerCount = cold.length && topCount - dressyCount - thermalCount > 1 ? 1 : 0;
+  add("T-shirt", `Rotate across ${days} days${days > 7 ? " · Plan to rewash once" : ""}`, topCount - dressyCount - layerCount - thermalCount, false, 2);
   if (layerCount) add("Long-sleeve shirt", `Cool days or cold nights in ${destinations(cold)}`, 1, false, 3);
   if (dressyCount) add("Linen shirt", `Dinner out in ${destinations(dinner)}`, 1, false, 2);
   if (hiking.length) add("Hiking pants", `Hiking in ${destinations(hiking)}`, 1, false, 3);

@@ -89,6 +89,12 @@ describe("Fresh packing journey rules", () => {
     expect(shoes.filter((e) => e.bag === "worn")).toHaveLength(1);
     expect(shoes.map((e) => e.item.name)).toEqual(["Trail runners", "Sneakers", "Sandals"]);
   });
+  it("includes the freezing-weather base layer within the five-top cap", () => {
+    const sample = freshSample();
+    const trip = buildPackingTrip({ ...sample, stops: sample.stops.map((s) => ({ ...s, climate: "Freezing" })) });
+    expect(trip.entries.filter((e) => e.item.category === "top")).toHaveLength(5);
+    expect(trip.entries.some((e) => e.item.name === "Thermal base layer")).toBe(true);
+  });
   it("does not recommend beach or optional personal items without a matching need", () => {
     const trip = freshSample();
     for (const name of ["Flip-flops", "Swimwear", "Sandals", "Sunscreen", "Laptop", "Laptop charger", "Contact lenses"])

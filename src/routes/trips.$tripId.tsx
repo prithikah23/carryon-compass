@@ -668,7 +668,6 @@ function PackingList({
                           {e.item.name}
                           {n > 1 && <span className="text-muted-foreground"> × {n}</span>}
                         </span>
-                        <span className="mt-1 block font-normal text-muted-foreground">{e.reason}</span>
                         </span>
                         {fix && (
                           <span className="shrink-0 rounded bg-warning/15 px-1.5 text-warning">
@@ -765,6 +764,7 @@ function PackingList({
                         </Button>
                       )}
                     </div>
+                    <p className="pb-2 pl-[4.25rem] pr-3 text-muted-foreground">{e.reason}</p>
                     {(expanded || fix) && (
                       <div className="pb-3 pl-[4.25rem] pr-3 text-muted-foreground">
                         <p>
