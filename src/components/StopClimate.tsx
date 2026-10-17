@@ -69,7 +69,7 @@ export function StopClimate({ stop, dates, patch, invalid, describedBy }: {
   const listId = stop.id + "-places";
   const weather = hasWeather ? stop.weather : undefined;
   return <>
-    <div className="relative min-w-0">
+    <div className="relative order-1 min-w-0">
       <Label htmlFor={stop.id + "name"}>Destination</Label>
       <Input
         id={stop.id + "name"} placeholder="e.g. Atacama" value={stop.name}
@@ -96,7 +96,7 @@ export function StopClimate({ stop, dates, patch, invalid, describedBy }: {
       {searchState && <p role="status" className="mt-1 text-sm text-muted-foreground">{searchState}</p>}
       {dates && <p className="mt-2 text-sm text-muted-foreground">{format(parseISO(dates.start), "MMM d")} to {format(parseISO(dates.end), "MMM d")}</p>}
     </div>
-    <div className="col-span-2 mt-1 space-y-4">
+    <div className="order-3 col-span-2 mt-1 space-y-4">
       <Chips label="Climate" options={CLIMATES} value={stop.climate} onChange={(climate) => edit({ climate })} />
       <Chips label="Rain" options={["none", "some", "lots"] as const} value={stop.rain} onChange={(rain) => edit({ rain })} />
       <div className="flex items-center gap-3">

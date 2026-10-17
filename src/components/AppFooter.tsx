@@ -18,10 +18,11 @@ export function AppFooter() {
           <DialogHeader>
             <DialogTitle>About Carry-On Compass</DialogTitle>
             <DialogDescription className="text-base">
-              Your data stays in this browser only. Weights and sizes are estimates. Airline rules
+              Weights and sizes are estimates. Airline rules
               vary, so check yours.
             </DialogDescription>
           </DialogHeader>
+          <p>To suggest a climate, place names and dates are sent to Open-Meteo, a free weather service. Nothing else leaves your browser. Climate is based on past years unless your trip is within two weeks.</p>
           <p>
             Souvenir volume is estimated at 4 L per kg. Bag weights are packing contents only; allow
             for the empty bags in your airline’s combined limit.
