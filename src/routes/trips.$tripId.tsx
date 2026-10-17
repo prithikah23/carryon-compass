@@ -669,7 +669,7 @@ function PackingList({
                         <p className="mt-1 break-words text-muted-foreground">{e.reason}</p>
                       </div>
                       <span className="pt-2 text-right tabular-nums text-muted-foreground sm:pt-0">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span>
-                      <div className="col-span-2 col-start-3 grid grid-cols-[minmax(0,1fr)_112px_44px] items-center gap-2 sm:col-span-3 sm:col-start-5 sm:grid-cols-[88px_112px_44px]">
+                      <div className="col-span-4 col-start-1 grid grid-cols-[minmax(0,1fr)_112px_44px] items-center gap-2 sm:col-span-3 sm:col-start-5 sm:grid-cols-[88px_112px_44px]">
                         <span className="min-w-0 rounded-full bg-secondary px-2 py-1 text-center text-primary">{e.bag === "worn" ? "Worn" : e.bag === "carryOn" ? "Carry-on" : "Personal"}</span>
                         <div className="grid grid-cols-[44px_24px_44px] items-center rounded-lg border" role="group" aria-label={`${e.item.name} quantity`}>
                           <Button variant="ghost" size="icon" className="size-11" disabled={n === 1} aria-label={`One fewer ${e.item.name}`} onClick={() => {
