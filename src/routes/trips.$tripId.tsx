@@ -526,7 +526,7 @@ function PackingList({
                         <p className={cn("break-words font-medium", allPacked && "line-through text-muted-foreground")}>{e.item.name}</p>
                         <p className="mt-1 break-words text-muted-foreground">{e.reason}</p>
                       </div>
-                      {e.item.weightSource || e.item.custom ? <div className="flex min-w-0 flex-col items-end">
+                      {grp.some((x) => x.item.weightSource || x.item.custom) ? <div className="flex min-w-0 flex-col items-end">
                         <Button variant="ghost" className="h-auto min-h-11 w-full flex-col items-end gap-0 px-1 py-1 text-right font-normal" aria-label={`Edit weight for ${e.item.name}`} onClick={() => onEdit([...ids])}><span className="tabular-nums">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span><span className="text-xs text-muted-foreground">{e.item.weightSource === "user" ? "Your weight" : "Estimated"}</span></Button>
                         <Button variant="ghost" className="h-auto min-h-11 w-full flex-col items-end gap-0 px-1 py-1 text-right font-normal" aria-label={`Edit volume for ${e.item.name}`} onClick={() => onEdit([...ids])}><span className="tabular-nums">{fmtVolume(grp.reduce((sum, x) => sum + x.item.volumeL, 0))}</span><span className="text-xs text-muted-foreground">{e.item.volumeSource === "user" ? "Your volume" : "Estimated"}</span></Button>
                       </div> : <span className="pt-2 text-right tabular-nums text-muted-foreground sm:pt-0">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span>}
