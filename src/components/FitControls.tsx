@@ -1,4 +1,5 @@
 import { Button } from "./ui/button";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 export function Chips<T extends string | number>({
   label,
@@ -22,8 +23,9 @@ export function Chips<T extends string | number>({
             variant={o === value ? "secondary" : "outline"}
             aria-pressed={o === value}
             onClick={() => onChange(o)}
-            className={cn("px-3", o === value && "border border-primary")}
+            className={cn("min-h-11 border-2 px-3 capitalize", o === value ? "border-primary" : "border-border")}
           >
+            <Check aria-hidden className={cn("size-4 shrink-0", o !== value && "invisible")} />
             {o}
           </Button>
         ))}

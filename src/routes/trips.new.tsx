@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, ArrowRight } from "lucide-react";
+import { Plus, Trash2, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,7 +166,7 @@ function Builder() {
                           key={a}
                           variant={l.activities.includes(a) ? "secondary" : "outline"}
                           aria-pressed={l.activities.includes(a)}
-                          className="capitalize"
+                          className={`min-h-11 border-2 capitalize ${l.activities.includes(a) ? "border-primary" : "border-border"}`}
                           onClick={() =>
                             patch(l.id, {
                               activities: l.activities.includes(a)
@@ -175,6 +175,7 @@ function Builder() {
                             })
                           }
                         >
+                          <Check aria-hidden className={`size-4 shrink-0 ${l.activities.includes(a) ? "" : "invisible"}`} />
                           {a}
                         </Button>
                       ))}
@@ -275,6 +276,8 @@ function Builder() {
           </div>
           <Slider
             aria-labelledby="souvenir"
+            aria-valuetext={`${souvenir.toFixed(1)} kilograms reserved for souvenirs`}
+            className="min-h-11"
             min={0}
             max={5}
             step={0.1}
