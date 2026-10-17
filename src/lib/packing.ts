@@ -1,5 +1,6 @@
 import { CATALOG, catalogItem } from "./catalog";
 import type { Item, BagId } from "./types";
+import type { ClimateResult } from "./climate";
 export const CLIMATES = ["Hot", "Warm", "Mild", "Cool", "Freezing"] as const;
 export type Climate = (typeof CLIMATES)[number];
 export type PackingActivity = "city" | "hiking" | "beach" | "dinner";
@@ -14,6 +15,12 @@ export interface Stop {
   rain: "none" | "some" | "lots";
   coldNights: boolean;
   activities: PackingActivity[];
+  latitude?: number;
+  longitude?: number;
+  startDate?: string;
+  endDate?: string;
+  weather?: ClimateResult;
+  manualClimateKey?: string;
 }
 export interface PackItem {
   item: Item;
@@ -35,6 +42,7 @@ export interface PackingTrip {
   rulesVersion?: number;
   weightCheck?: boolean;
   laundry?: LaundryOption;
+  startDate?: string;
 }
 const names = [
   "T-shirt",
