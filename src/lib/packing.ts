@@ -68,11 +68,19 @@ const names = [
   "Travel adapter",
   "Headphones",
 ];
+const EXTRA_SYNONYMS: Record<string, string> = {
+  "Hair straightener": "flat iron curler curling wand hair tool styling",
+  "Makeup bag": "makeup cosmetics cosmetic pouch beauty",
+  "Neck pillow": "travel pillow comfort flight",
+  "Evening dress": "dress dinner outfit formal going out",
+  "Jewelry case": "jewellery jewelry earrings necklace",
+};
 const extra = (
   name: string,
   category: Item["category"],
   weightG: number,
   volumeL: number,
+  formality: Item["formality"] = "casual",
 ): Item => ({
   id: name,
   catalogId: name.toLowerCase().replaceAll(" ", "-"),
@@ -82,7 +90,7 @@ const extra = (
   volumeL,
   color: "#476b75",
   warmth: "light",
-  formality: "casual",
+  formality,
   suitable: ["city"],
   maxWears: 99,
 });
@@ -92,17 +100,43 @@ export const TRAVEL_CATALOG: Item[] = [
   extra("Toiletry kit", "toiletry", 450, 1),
   extra("Passport", "documents", 40, 0.05),
   extra("Wallet", "documents", 100, 0.15),
+  extra("Hair straightener", "tech", 450, 0.8),
+  extra("Makeup bag", "toiletry", 350, 0.7),
+  extra("Neck pillow", "accessory", 250, 1.2),
+  extra("Evening dress", "dress", 300, 0.6, "smart"),
+  extra("Jewelry case", "accessory", 150, 0.3),
 ];
 export function findItems(q: string) {
   const words = q.toLowerCase().trim().split(/\s+/);
   return TRAVEL_CATALOG.filter((i) =>
     words.every((w) =>
-      `${i.name} ${CATALOG.find((c) => c.catalogId === i.catalogId)?.synonyms ?? ""}`
+      `${i.name} ${CATALOG.find((c) => c.catalogId === i.catalogId)?.synonyms ?? EXTRA_SYNONYMS[i.name] ?? ""}`
         .toLowerCase()
         .includes(w),
     ),
   );
 }
+export type AirlinePreset = {
+  name: string;
+  carryOnL: 30 | 40 | 45;
+  personalL: 12 | 18 | 25;
+  limitKg: number;
+  note: string;
+};
+/** Typical cabin allowances (economy). Estimates only — airlines change rules. */
+export const AIRLINES: AirlinePreset[] = [
+  { name: "Air Canada", carryOnL: 40, personalL: 18, limitKg: 10, note: "No set weight limit; bags must fit the sizer. 10 kg is a comfortable target." },
+  { name: "Delta", carryOnL: 45, personalL: 18, limitKg: 12, note: "No published weight limit; size only. 12 kg is a realistic safe target." },
+  { name: "American Airlines", carryOnL: 45, personalL: 18, limitKg: 12, note: "No published weight limit; size only. 12 kg is a realistic safe target." },
+  { name: "United", carryOnL: 45, personalL: 18, limitKg: 12, note: "No published weight limit; size only. 12 kg is a realistic safe target." },
+  { name: "British Airways", carryOnL: 45, personalL: 18, limitKg: 23, note: "Up to 23 kg per bag; you still have to lift it into the overhead bin." },
+  { name: "Lufthansa", carryOnL: 40, personalL: 12, limitKg: 8, note: "8 kg for the carry-on in economy, often weighed at the gate." },
+  { name: "Qatar Airways", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg combined in economy, often weighed at check-in." },
+  { name: "Emirates", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg in economy, often weighed at check-in." },
+  { name: "Singapore Airlines", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg in economy, often weighed at check-in." },
+  { name: "Ryanair", carryOnL: 40, personalL: 12, limitKg: 10, note: "10 kg carry-on with Priority; the free bag is a small 40×20×25 cm item." },
+  { name: "easyJet", carryOnL: 40, personalL: 12, limitKg: 15, note: "Large cabin bag up to 15 kg with Up Front or Plus; free bag is under-seat only." },
+];
 export const souvenirVolume = (kg: number) => kg * 4;
 export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTrip {
   const entries: PackItem[] = [];
