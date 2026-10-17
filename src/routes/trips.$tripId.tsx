@@ -643,6 +643,7 @@ function PackingList({
                 const remove = () => {
                   save(trip.entries.filter((x) => !ids.has(x.item.id)));
                   toast.success(`Removed ${e.item.name}`, {
+                    duration: 10000,
                     action: { label: "Undo", onClick: () => {
                       const current = latestTrip.current;
                       if (current.id !== trip.id) return;
