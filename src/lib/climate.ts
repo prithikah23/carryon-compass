@@ -36,7 +36,7 @@ export function climateKey(latitude: number, longitude: number, start: string, e
 }
 export function usesForecast(start: string, today = todayISO()) {
   const days = Math.round((parseISO(start).getTime() - parseISO(today).getTime()) / 86400000);
-  return days >= 0 && days < 14;
+  return days >= 0 && days <= 14;
 }
 /** Keep month/day (clamp leap day) while moving the entire interval to a completed past year. */
 export function historicalRanges(start: string, end: string, today = todayISO()) {
