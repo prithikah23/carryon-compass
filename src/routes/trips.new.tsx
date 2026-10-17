@@ -23,6 +23,8 @@ export const Route = createFileRoute("/trips/new")({
       "Plan my trip",
       "Choose destinations, climates and two bags. Build a packing plan with room for souvenirs.",
     ),
+  validateSearch: (s: Record<string, unknown>): { airline?: string } =>
+    typeof s["airline"] === "string" ? { airline: s["airline"] } : {},
   component: Setup,
 });
 function Setup() {
@@ -33,11 +35,12 @@ function Setup() {
 function Builder() {
   const navigate = useNavigate();
   const [stops, setStops] = useState<Stop[]>(() => [newStop()]);
-  const [carry, setCarry] = useState(40);
-  const [personal, setPersonal] = useState(18);
-  const [limit, setLimit] = useState("10");
+  const preset = AIRLINES.find((a) => a.name === Route.useSearch().airline);
+  const [carry, setCarry] = useState<number>(preset?.carryOnL ?? 40);
+  const [personal, setPersonal] = useState<number>(preset?.personalL ?? 18);
+  const [limit, setLimit] = useState(String(preset?.limitKg ?? 10));
   const [souvenir, setSouvenir] = useState(1);
-  const [airline, setAirline] = useState("");
+  const [airline, setAirline] = useState(preset?.name ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const patch = (id: string, change: Partial<Stop>) =>
     setStops((s) => s.map((l) => (l.id === id ? { ...l, ...change } : l)));

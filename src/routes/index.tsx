@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Compass, Gift, Layers, Luggage, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { meta } from "@/components/FitControls";
-import { freshSample } from "@/lib/packing";
+import { AIRLINES, freshSample } from "@/lib/packing";
 import { savePackingTrip } from "@/lib/packing-store";
 export const Route = createFileRoute("/")({
   head: () =>
@@ -91,6 +91,29 @@ function Home() {
             </div>
           ))}
         </div>
+      </section>
+      <section aria-labelledby="airlines" className="border-t py-12">
+        <h2 id="airlines" className="text-3xl font-semibold">Pick your airline</h2>
+        <p className="mt-2 text-muted-foreground">
+          Bag sizes and weight limits fill in for you. Typical economy rules, check yours.
+        </p>
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {AIRLINES.map((a) => (
+            <li key={a.name}>
+              <Link
+                to="/trips/new"
+                search={{ airline: a.name }}
+                className="flex min-h-11 items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <Plane className="size-4 text-accent" aria-hidden />
+                  {a.name}
+                </span>
+                <span className="text-muted-foreground">{a.limitKg} kg</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
       <section className="flex flex-wrap items-center justify-between gap-5 border-t py-8">
         <div className="flex items-center gap-3">

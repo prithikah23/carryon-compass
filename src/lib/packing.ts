@@ -67,6 +67,9 @@ const names = [
   "Power bank",
   "Travel adapter",
   "Headphones",
+  "Blouse",
+  "Flip-flops",
+  "Laptop",
 ];
 const EXTRA_SYNONYMS: Record<string, string> = {
   "Hair straightener": "flat iron curler curling wand hair tool styling",
@@ -74,6 +77,11 @@ const EXTRA_SYNONYMS: Record<string, string> = {
   "Neck pillow": "travel pillow comfort flight",
   "Evening dress": "dress dinner outfit formal going out",
   "Jewelry case": "jewellery jewelry earrings necklace",
+  "Going-out top": "fancy top blouse party dinner night out shirt",
+  Heels: "shoes heels pumps dress shoes dinner footwear",
+  "Baseball cap": "hat cap sun baseball",
+  "Contact lenses": "contacts lenses solution eyes",
+  "Laptop charger": "charger laptop cable power",
 };
 const extra = (
   name: string,
@@ -105,6 +113,11 @@ export const TRAVEL_CATALOG: Item[] = [
   extra("Neck pillow", "accessory", 250, 1.2),
   extra("Evening dress", "dress", 300, 0.6, "smart"),
   extra("Jewelry case", "accessory", 150, 0.3),
+  extra("Going-out top", "top", 180, 0.6, "smart"),
+  extra("Heels", "shoes", 500, 1.5, "smart"),
+  extra("Baseball cap", "accessory", 90, 0.4),
+  extra("Contact lenses", "toiletry", 200, 0.3),
+  extra("Laptop charger", "tech", 250, 0.3),
 ];
 export function findItems(q: string) {
   const words = q.toLowerCase().trim().split(/\s+/);
@@ -156,69 +169,71 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   };
   const destinations = (stops: Stop[]) => stops.map((s) => s.name).join(" and ");
   const all = `Reused across ${destinations(input.stops)}`;
-  add(
-    "Underwear",
-    `Daily basics for ${days} days; wash and rewear after 7 days`,
-    Math.min(7, days),
-    true,
-    5,
-  );
-  add(
-    "Socks",
-    `Daily basics for ${days} days; wash and rewear after 7 days`,
-    Math.min(7, days),
-    true,
-    5,
-  );
-  add(
-    "T-shirt",
-    `${Math.min(5, Math.ceil(days / 2))} tops rotated across ${days} days`,
-    Math.min(5, Math.ceil(days / 2)),
-    false,
-    2,
-  );
+  const basics = Math.min(15, Math.ceil(days * 1.4));
+  add("Underwear", `About 1.5 a day for ${days} days, with spares`, basics, true, 5);
+  add("Socks", `About 1.5 a day for ${days} days, with spares`, basics, true, 5);
+  const tees = Math.min(8, Math.ceil(days * 0.6));
+  add("T-shirt", `${tees} tops rotated across ${days} days`, tees, false, 2);
+  if (days >= 5) add("Long-sleeve shirt", `Layering top for cooler days · ${all.toLowerCase()}`, 1, false, 2);
   const hiking = input.stops.filter((s) => s.activities.includes("hiking"));
   const dinner = input.stops.filter((s) => s.activities.includes("dinner"));
   const beach = input.stops.filter((s) => s.activities.includes("beach"));
-  add(hiking.length ? "Hiking pants" : "Chinos", all, 1, false, 3);
+  const city = input.stops.filter((s) => s.activities.includes("city"));
+  if (hiking.length) add("Hiking pants", `Hiking in ${destinations(hiking)}`, 1, false, 3);
+  add("Jeans", `Everyday bottom · ${all.toLowerCase()}`, 1, false, 3);
   add("Leggings", `Spare bottom · ${all.toLowerCase()}`, 1, false, 1);
-  if (days > 7)
+  if (days > 7 && !hiking.length)
     add(dinner.length ? "Chinos" : "Shorts", `Third bottom for ${days} days`, 1, false, 1);
-  add("Sleepwear", `For every night of your ${days}-day trip`, 1, true, 5);
+  add("Sleepwear", `Sets of PJs rotated over ${days} nights`, days > 5 ? 2 : 1, true, 5);
   add("Toiletry kit", "Daily essentials kept together", 1, true, 5);
+  add("Contact lenses", "Daily lenses and travel solution", 1, true, 4);
   add("Phone charger", "Keeps your phone charged on every leg", 1, true, 5);
+  add("Power bank", "Portable charger for long travel days", 1, false, 3);
+  add("Travel adapter", "Universal adapter for foreign sockets", 1, true, 4);
+  if (days >= 5) {
+    add("Laptop", "For work, photos and planning on a long trip", 1, false, 2);
+    add("Laptop charger", "Charges your laptop", 1, false, 2);
+  }
   add("Passport", "Travel document · keep it with you", 1, true, 10);
   add("Wallet", "Money and cards · keep them with you", 1, true, 10);
+  add("Sunglasses", `Bright days in ${destinations(input.stops)}`, 1, false, 2);
   const cold = input.stops.filter(
     (s) => s.climate === "Cool" || s.climate === "Freezing" || s.coldNights,
   );
   if (cold.length) {
     add("Fleece", `Needed for cold nights or cool days in ${destinations(cold)}`, 1, false, 4);
     add("Puffer jacket", `Warm protection in ${destinations(cold)}`, 1, false, 4);
+    add("Beanie", `Warm head on cold nights in ${destinations(cold)}`, 1, false, 2);
+    add("Scarf", `Extra warmth in ${destinations(cold)}, doubles as a dinner accessory`, 1, false, 2);
   }
   const freezing = input.stops.filter((s) => s.climate === "Freezing");
   if (freezing.length) {
-    for (const n of ["Thermal base layer", "Beanie", "Gloves", "Scarf"])
+    for (const n of ["Thermal base layer", "Gloves"])
       add(n, `Needed for freezing weather in ${destinations(freezing)}`, 1, false, 4);
   }
   const rain = input.stops.filter((s) => s.rain !== "none");
   if (rain.length) add("Rain shell", `Rain protection in ${destinations(rain)}`, 1, false, 4);
-  add(
-    hiking.length ? "Trail runners" : "Sneakers",
-    hiking.length ? `Hiking and city walking in ${destinations(input.stops)}` : all,
-    1,
-    false,
-    4,
-  );
-  if (dinner.length)
-    add("Linen shirt", `One dressier outfit for dinner in ${destinations(dinner)}`, 1, false, 1);
+  if (hiking.length)
+    add("Trail runners", `Hiking in ${destinations(hiking)}`, 1, false, 4);
+  if (city.length || !hiking.length)
+    add("Sneakers", `Everyday walking${city.length ? ` in ${destinations(city)}` : ""}`, 1, false, 3);
+  if (dinner.length) {
+    add("Linen shirt", `Dressier top for dinner in ${destinations(dinner)}`, 1, false, 1);
+    add("Going-out top", `Night out in ${destinations(dinner)}`, 1, false, 1);
+    add("Evening dress", `One dressy outfit for dinner in ${destinations(dinner)}`, 1, false, 1);
+    add("Heels", `Dressy shoes for dinner in ${destinations(dinner)}`, 1, false, 1);
+  }
   if (beach.length) {
     add("Swimwear", `Beach days in ${destinations(beach)}`, 1, false, 1);
     add("Sandals", `Beach and city walking in ${destinations(beach)}`, 1, false, 1);
     add("Sunscreen", `Sun protection in ${destinations(beach)}`, 1, true, 4);
   }
+  if (days >= 5) add("Flip-flops", "Hostel showers and lounging", 1, false, 1);
   const sun = input.stops.filter((s) => s.climate === "Hot" || s.climate === "Warm");
-  if (sun.length) add("Sun hat", `Sun protection in ${destinations(sun)}`, 1, false, 2);
+  if (sun.length) {
+    if (hiking.length) add("Baseball cap", `Sun and shade on hikes in ${destinations(sun)}`, 1, false, 1);
+    else add("Sun hat", `Sun protection in ${destinations(sun)}`, 1, false, 2);
+  }
   const shoe = entries
     .filter((e) => e.item.category === "shoes")
     .sort((a, b) => b.item.weightG - a.item.weightG)[0];
@@ -338,7 +353,7 @@ export function freshSample(): PackingTrip {
     id: "sample-trip",
     carryOnL: 40,
     personalL: 18,
-    limitKg: 10,
+    limitKg: 12,
     souvenirKg: 1,
     sample: true,
     stops: [
@@ -380,4 +395,34 @@ export function freshSample(): PackingTrip {
       },
     ],
   });
+}
+export interface OutfitIdea {
+  title: string;
+  where: string;
+  pieces: string[];
+}
+/** Outfit ideas made only from items currently in the trip, one per stop/activity. */
+export function outfitIdeas(trip: PackingTrip): OutfitIdea[] {
+  const have = new Set(trip.entries.map((e) => e.item.name));
+  const pick = (...opts: string[]) => opts.find((o) => have.has(o));
+  const ideas: OutfitIdea[] = [];
+  const push = (title: string, where: string, pieces: (string | undefined)[]) => {
+    const p = pieces.filter((x): x is string => !!x);
+    if (p.length >= 2 && !ideas.some((i) => i.title === title && i.where === where)) ideas.push({ title, where, pieces: p });
+  };
+  for (const s of trip.stops) {
+    const where = s.name || "Your trip";
+    const cold = s.coldNights || s.climate === "Cool" || s.climate === "Freezing";
+    if (s.activities.includes("city"))
+      push("Day in the city", where, [pick("T-shirt"), pick("Jeans", "Chinos", "Leggings"), pick("Sneakers"), s.rain !== "none" ? pick("Rain shell") : pick("Sunglasses")]);
+    if (s.activities.includes("hiking"))
+      push("Hiking day", where, [pick("T-shirt", "Long-sleeve shirt"), pick("Hiking pants", "Leggings"), pick("Trail runners", "Sneakers"), s.rain !== "none" ? pick("Rain shell") : pick("Baseball cap", "Sun hat"), cold ? pick("Fleece") : undefined]);
+    if (s.activities.includes("dinner"))
+      push("Dinner out", where, [pick("Evening dress") ?? pick("Going-out top", "Linen shirt"), have.has("Evening dress") ? undefined : pick("Jeans", "Chinos"), pick("Heels", "Sneakers"), cold ? pick("Scarf") : undefined]);
+    if (s.activities.includes("beach"))
+      push("Beach day", where, [pick("Swimwear"), pick("Shorts", "Linen shirt", "T-shirt"), pick("Sandals", "Flip-flops"), pick("Sun hat", "Sunglasses")]);
+    if (cold)
+      push("Cold evening", where, [pick("Thermal base layer", "Long-sleeve shirt", "T-shirt"), pick("Fleece"), pick("Puffer jacket"), pick("Beanie"), pick("Jeans", "Hiking pants")]);
+  }
+  return ideas.slice(0, 6);
 }
