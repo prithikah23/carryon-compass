@@ -25,6 +25,9 @@ export interface Item {
   color: string;
   weightG: number;
   volumeL: number;
+  custom?: boolean;
+  weightSource?: "estimated" | "user";
+  volumeSource?: "estimated" | "user";
   warmth: Warmth;
   formality: Formality;
   suitable: Activity[];
