@@ -17,3 +17,4 @@
 - The active app has only home, one-page trip setup and individual packing plans; packed item edits are saved directly per trip so checklist and bag choices persist.
 - The active travel catalog narrows shared catalog defaults to common essentials and supplements sleepwear, toiletry kit and documents; individual copies represent quantity.
 - A shared ItemIcon renders category/name-specific line illustrations using each item's stored color so wardrobe and trip displays stay consistent.
+- Generated trips carry a packing-rules version; obsolete saved samples regenerate on load while personal trips and current sample edits remain untouched, so revised defaults appear without discarding user work.

@@ -6,3 +6,6 @@
 - [x] Confirmed reset/start over, footer limitations and accessible phone layout
 - [x] Test complete fresh-browser journey and packing edge cases
 - [x] Packing list redesign: bag tabs + compact rows
+- [x] Realistic capped quantities, activity-needed items and sample regeneration
+- [x] Visible trip-specific reasons without a redesign
+- [x] Test sample fit and live verdict, meters, outfits and worn updates

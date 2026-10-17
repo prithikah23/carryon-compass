@@ -41,6 +41,7 @@ import {
   totals,
   suggestedRemovals,
   outfitIdeas,
+  addedItemReason,
   type PackingTrip,
   type PackItem,
 } from "@/lib/packing";
@@ -157,7 +158,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
         {
           item: { ...item, id: crypto.randomUUID() },
           bag,
-          reason: "Added by you",
+          reason: addedItemReason(item, trip),
           packed: false,
           essential: false,
           impact: 0,
@@ -605,7 +606,7 @@ function PackingList({
         const g = list.reduce((s, e) => s + e.item.weightG, 0);
         const groups: PackItem[][] = [];
         for (const e of list) {
-          const found = groups.find((x) => x[0]!.item.name === e.item.name);
+          const found = groups.find((x) => x[0]?.item.name === e.item.name);
           if (found) found.push(e);
           else groups.push([e]);
         }
@@ -620,7 +621,8 @@ function PackingList({
             </h3>
             <ul className="divide-y rounded-xl border">
               {groups.map((grp) => {
-                const e = grp[0]!;
+                const e = grp[0];
+                if (!e) return null;
                 const n = grp.length;
                 const ids = new Set(grp.map((x) => x.item.id));
                 const fixEntry = grp.find((x) => fixes.includes(x.item.id));
@@ -628,7 +630,8 @@ function PackingList({
                 const key = `${e.item.name}-${e.bag}`;
                 const expanded = open === key;
                 const allPacked = grp.every((x) => x.packed);
-                const last = grp[n - 1]!;
+                const last = grp[n - 1];
+                if (!last) return null;
                 const removeOne = (id: string) => {
                   save(trip.entries.filter((x) => x.item.id !== id));
                 };
@@ -653,16 +656,18 @@ function PackingList({
                         type="button"
                         aria-expanded={expanded}
                         onClick={() => setOpen(expanded ? null : key)}
-                        className="flex min-h-12 min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-ring"
+                        className="flex min-h-12 min-w-0 flex-1 items-center gap-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-ring"
                       >
+                        <span className="min-w-0 flex-1">
                         <span
                           className={cn(
-                            "truncate font-medium",
+                            "block font-medium",
                             allPacked && "line-through text-muted-foreground",
                           )}
                         >
                           {e.item.name}
                           {n > 1 && <span className="text-muted-foreground"> × {n}</span>}
+                        </span>
                         </span>
                         {fix && (
                           <span className="shrink-0 rounded bg-warning/15 px-1.5 text-warning">
@@ -759,10 +764,11 @@ function PackingList({
                         </Button>
                       )}
                     </div>
+                    <p className="pb-2 pl-[4.25rem] pr-3 text-muted-foreground">{e.reason}</p>
                     {(expanded || fix) && (
                       <div className="pb-3 pl-[4.25rem] pr-3 text-muted-foreground">
                         <p>
-                          {e.reason} · {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
+                          {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
                         </p>
                         {fixEntry && (
                           <p className="mt-1 text-warning">
