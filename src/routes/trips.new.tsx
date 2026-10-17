@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Chips, meta } from "@/components/FitControls";
 import {
+  AIRLINES,
   CLIMATES,
   buildPackingTrip,
   newStop,
@@ -36,6 +37,7 @@ function Builder() {
   const [personal, setPersonal] = useState(18);
   const [limit, setLimit] = useState("10");
   const [souvenir, setSouvenir] = useState(1);
+  const [airline, setAirline] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const patch = (id: string, change: Partial<Stop>) =>
     setStops((s) => s.map((l) => (l.id === id ? { ...l, ...change } : l)));
@@ -190,6 +192,37 @@ function Builder() {
           <h2 className="mb-2 text-2xl">Your two bags</h2>
           <p className="mb-5 text-muted-foreground">Typical sizes, check your airline.</p>
           <div className="space-y-5">
+            <div className="max-w-sm">
+              <Label htmlFor="airline">Flying with (optional)</Label>
+              <select
+                id="airline"
+                value={airline}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setAirline(name);
+                  const a = AIRLINES.find((x) => x.name === name);
+                  if (a) {
+                    setCarry(a.carryOnL);
+                    setPersonal(a.personalL);
+                    setLimit(String(a.limitKg));
+                    toast.success(`Bag limits set for ${a.name}`);
+                  }
+                }}
+                aria-describedby="airline-note"
+                className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Other / I'll set it myself</option>
+                {AIRLINES.map((a) => (
+                  <option key={a.name} value={a.name}>
+                    {a.name} · {a.limitKg} kg
+                  </option>
+                ))}
+              </select>
+              <p id="airline-note" className="mt-2 text-muted-foreground">
+                {AIRLINES.find((x) => x.name === airline)?.note ??
+                  "Pick an airline to fill in its typical bag sizes and weight limit. You can still change them."}
+              </p>
+            </div>
             <Chips
               label="Carry-on"
               options={["Small 30 L", "Standard 40 L", "Large 45 L"]}

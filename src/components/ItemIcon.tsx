@@ -1,4 +1,4 @@
-import { BatteryCharging, BookOpen, Camera, CreditCard, Glasses, Headphones, Laptop, Plug, Smartphone, Usb, Droplets, Package, Umbrella } from "lucide-react";
+import { BatteryCharging, BookOpen, Camera, Cloud, CreditCard, Gem, Glasses, Headphones, Laptop, Plug, Smartphone, Sparkles, Usb, Droplets, Package, Umbrella, Zap } from "lucide-react";
 import type { Item, Category } from "@/lib/types";
 
 const paths = {
@@ -18,7 +18,7 @@ const paths = {
 };
 export function ItemIcon({ item, className = "size-8" }: { item: Pick<Item, "name" | "category"> & Partial<Pick<Item, "color">>; className?: string }) {
   const name = item.name.toLowerCase();
-  const Icon = name.includes("charger") ? Usb : name.includes("adapter") ? Plug : name.includes("power bank") ? BatteryCharging : name.includes("phone") ? Smartphone : name.includes("laptop") ? Laptop : name.includes("headphone") ? Headphones : name.includes("reader") ? BookOpen : name.includes("camera") ? Camera : name.includes("sunglass") ? Glasses : item.category === "documents" ? CreditCard : name.includes("umbrella") ? Umbrella : item.category === "tech" ? Package : null;
+  const Icon = name.includes("straightener") ? Zap : name.includes("makeup") ? Sparkles : name.includes("pillow") ? Cloud : name.includes("jewel") ? Gem : name.includes("charger") ? Usb : name.includes("adapter") ? Plug : name.includes("power bank") ? BatteryCharging : name.includes("phone") ? Smartphone : name.includes("laptop") ? Laptop : name.includes("headphone") ? Headphones : name.includes("reader") ? BookOpen : name.includes("camera") ? Camera : name.includes("sunglass") ? Glasses : item.category === "documents" ? CreditCard : name.includes("umbrella") ? Umbrella : item.category === "tech" ? Package : null;
   const props = { className: `shrink-0 ${className}`, style: { color: item.color }, role: "img", "aria-label": item.name, strokeWidth: 1.7 };
   if (Icon) return <Icon {...props} />;
   let kind: keyof typeof paths = item.category in paths ? item.category as keyof typeof paths : "accessory";
