@@ -87,6 +87,8 @@ export async function lookupClimate(latitude: number, longitude: number, start: 
       const host = source === "forecast" ? "https://api.open-meteo.com/v1/forecast" : "https://archive-api.open-meteo.com/v1/archive";
       const data = await timedRequest<{ daily?: Daily }>(`${host}?${query}`, controller.signal);
       if (!data.daily) throw new Error("No daily weather");
+      const expected = Math.round((parseISO(range.end).getTime() - parseISO(range.start).getTime()) / 86400000) + 1;
+      if (data.daily.temperature_2m_max.length !== expected || data.daily.temperature_2m_min.length !== expected || data.daily.precipitation_sum.length !== expected) throw new Error("Incomplete daily weather");
       return data.daily;
     }));
     const days = daily.flatMap((d) => d.temperature_2m_max.map((high, i) => ({ high, low: d.temperature_2m_min[i], rain: d.precipitation_sum[i] })));
