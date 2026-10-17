@@ -15,3 +15,7 @@
 - [x] Add dated stops, place search and editable Open-Meteo climate suggestions
 - [x] Persist climate results, keep sample offline, update privacy disclosure
 - [x] Test climate thresholds, dated lookup and unavailable-weather manual setup
+- [ ] Expand quick-add search with travel estimates, synonyms and saved custom suggestions
+- [ ] Add category-only custom creation and editable weight/volume with instant totals
+- [ ] Make packing checkboxes visually smaller while retaining easy tap targets
+- [ ] Verify requested four-item flow, saved edits and phone layout
