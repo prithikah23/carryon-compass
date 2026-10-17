@@ -206,7 +206,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
               className={cn("text-2xl font-semibold", fits ? "text-success" : "text-destructive")}
             >
               {fits
-                ? `Your bags fit, with ${fmtWeight(t.spareG)} to spare`
+                ? trip.weightCheck === false ? "Your bags fit, with room saved for souvenirs" : `Your bags fit, with ${fmtWeight(t.spareG)} to spare`
                 : t.overG
                   ? `You're ${fmtWeight(t.overG)} over. Try removing the items marked below.`
                   : `You're ${fmtVolume(t.overCarryL || t.overPersonalL)} over in your ${t.overCarryL ? "carry-on" : "personal item"}. Try removing the items marked below.`}
@@ -278,18 +278,17 @@ function Plan({ trip }: { trip: PackingTrip }) {
           ))}
         </div>
         <div className="mt-6 border-t pt-5">
-          <Meter
+          {trip.weightCheck === false ? <p className="flex justify-between gap-3"><span>Combined weight · No weight limit</span><span>{fmtWeight(t.usedG)}</span></p> : <Meter
             label="Combined weight"
             used={t.usedG - (returning ? t.reserveG : 0)}
             reserve={t.reserveG}
             limit={trip.limitKg * 1000}
             unit="g"
             returning={returning}
-          />
+          />}
           <p className="mt-3 text-muted-foreground">
             {returning ? "Souvenir space is filled." : "Striped space is saved for souvenirs."}{" "}
-            Reserve: {trip.souvenirKg.toFixed(1)} kg · {fmtVolume(t.reserveL)}. Weight allowance is
-            shared by both bags.
+            Reserve: {trip.souvenirKg.toFixed(1)} kg · {fmtVolume(t.reserveL)}. {trip.weightCheck === false ? "Fit is checked by volume only. Check route and fare rules, and make sure you can lift your bag." : "Weight allowance is shared by both bags."}
           </p>
         </div>
       </section>

@@ -30,6 +30,7 @@ export interface PackingTrip {
   entries: PackItem[];
   sample: boolean;
   rulesVersion?: number;
+  weightCheck?: boolean;
 }
 const names = [
   "T-shirt",
@@ -143,15 +144,15 @@ export type AirlinePreset = {
   name: string;
   carryOnL: 30 | 40 | 45;
   personalL: 12 | 18 | 25;
-  limitKg: number;
+  limitKg: number | null;
   note: string;
 };
 /** Typical cabin allowances (economy). Estimates only — airlines change rules. */
 export const AIRLINES: AirlinePreset[] = [
-  { name: "Air Canada", carryOnL: 40, personalL: 18, limitKg: 10, note: "No set weight limit; bags must fit the sizer. 10 kg is a comfortable target." },
-  { name: "Delta", carryOnL: 45, personalL: 18, limitKg: 12, note: "No published weight limit; size only. 12 kg is a realistic safe target." },
-  { name: "American Airlines", carryOnL: 45, personalL: 18, limitKg: 12, note: "No published weight limit; size only. 12 kg is a realistic safe target." },
-  { name: "United", carryOnL: 45, personalL: 18, limitKg: 12, note: "No published weight limit; size only. 12 kg is a realistic safe target." },
+  { name: "Air Canada", carryOnL: 40, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit; you must lift the bag unaided. Fare and route restrictions apply; check yours." },
+  { name: "Delta", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
+  { name: "American Airlines", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
+  { name: "United", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
   { name: "British Airways", carryOnL: 45, personalL: 18, limitKg: 23, note: "Up to 23 kg per bag; you still have to lift it into the overhead bin." },
   { name: "Lufthansa", carryOnL: 40, personalL: 12, limitKg: 8, note: "8 kg for the carry-on in economy, often weighed at the gate." },
   { name: "Qatar Airways", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg combined in economy, often weighed at check-in." },
@@ -300,7 +301,7 @@ export function totals(trip: PackingTrip, returning = false) {
     reserveG,
     reserveL,
     usedG: g + (returning ? reserveG : 0),
-    overG: Math.max(0, g + reserveG - trip.limitKg * 1000),
+    overG: trip.weightCheck === false ? 0 : Math.max(0, g + reserveG - trip.limitKg * 1000),
     overCarryL: Math.max(0, bags.carryOn.l + reserveL - trip.carryOnL),
     overPersonalL: Math.max(0, bags.personal.l - trip.personalL),
     spareG: trip.limitKg * 1000 - g - reserveG,

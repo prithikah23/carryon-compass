@@ -75,8 +75,8 @@ function Home() {
             },
             {
               Icon: Plane,
-              title: "Your airline's real limits",
-              text: "Pick Qatar, Delta, Air Canada and more. Sizes and weight fill in, so no surprise gate fees.",
+              title: "Typical airline limits",
+              text: "Pick an airline to fill in typical bag sizes and weight limits. Rules change, so check yours.",
             },
             {
               Icon: Gift,
@@ -103,13 +103,13 @@ function Home() {
               <Link
                 to="/trips/new"
                 search={{ airline: a.name }}
-                className="flex min-h-11 items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-ring"
+                className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-ring"
               >
-                <span className="flex items-center gap-2 font-medium">
-                  <Plane className="size-4 text-accent" aria-hidden />
+                <span className="flex min-w-0 items-center gap-2 font-medium">
+                  <Plane className="size-4 shrink-0 text-accent" aria-hidden />
                   {a.name}
                 </span>
-                <span className="text-muted-foreground">{a.limitKg} kg</span>
+                <span className="text-muted-foreground">{a.limitKg === null ? "No weight limit" : `${a.limitKg} kg`}</span>
               </Link>
             </li>
           ))}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Chips, meta } from "@/components/FitControls";
 import {
@@ -38,6 +39,7 @@ function Builder() {
   const preset = AIRLINES.find((a) => a.name === Route.useSearch().airline);
   const [carry, setCarry] = useState<number>(preset?.carryOnL ?? 40);
   const [personal, setPersonal] = useState<number>(preset?.personalL ?? 18);
+  const [weightCheck, setWeightCheck] = useState(preset?.limitKg !== null);
   const [limit, setLimit] = useState(String(preset?.limitKg ?? 10));
   const [souvenir, setSouvenir] = useState(1);
   const [airline, setAirline] = useState(preset?.name ?? "");
@@ -54,9 +56,9 @@ function Builder() {
         errs[l.id + "days"] = "Enter 1 to 90 whole days.";
     }
     const kg = Number(limit);
-    if (!Number.isFinite(kg) || kg < 1 || kg > 40)
+    if (weightCheck && (!Number.isFinite(kg) || kg < 1 || kg > 40))
       errs["limit"] = "Enter a combined limit between 1 and 40 kg.";
-    if (souvenir >= kg) errs["souvenir"] = "Leave some of the weight allowance for your packing.";
+    if (weightCheck && souvenir >= kg) errs["souvenir"] = "Leave some of the weight allowance for your packing.";
     setErrors(errs);
     if (Object.keys(errs).length) return;
     const trip = buildPackingTrip({
@@ -64,7 +66,8 @@ function Builder() {
       stops: stops.map((l) => ({ ...l, name: l.name.trim() })),
       carryOnL: carry,
       personalL: personal,
-      limitKg: kg,
+      limitKg: weightCheck ? kg : 10,
+      weightCheck,
       souvenirKg: souvenir,
       sample: false,
     });
@@ -204,10 +207,12 @@ function Builder() {
                   const name = e.target.value;
                   setAirline(name);
                   const a = AIRLINES.find((x) => x.name === name);
+                  if (!a) { setWeightCheck(true); }
                   if (a) {
                     setCarry(a.carryOnL);
                     setPersonal(a.personalL);
-                    setLimit(String(a.limitKg));
+                    setLimit(String(a.limitKg ?? 10));
+                    setWeightCheck(a.limitKg !== null);
                     toast.success(`Bag limits set for ${a.name}`);
                   }
                 }}
@@ -217,7 +222,7 @@ function Builder() {
                 <option value="">Other / I'll set it myself</option>
                 {AIRLINES.map((a) => (
                   <option key={a.name} value={a.name}>
-                    {a.name} · {a.limitKg} kg
+                    {a.name} · {a.limitKg === null ? "No weight limit" : `${a.limitKg} kg`}
                   </option>
                 ))}
               </select>
@@ -244,7 +249,11 @@ function Builder() {
               }
               onChange={(v) => setPersonal(v.includes("12") ? 12 : v.includes("18") ? 18 : 25)}
             />
-            <div className="max-w-xs">
+            <div className="flex items-center gap-3">
+              <Checkbox id="weight-check" checked={!weightCheck} onCheckedChange={(v) => setWeightCheck(v !== true)} className="size-11" />
+              <Label htmlFor="weight-check">No weight limit — check volume only</Label>
+            </div>
+            {weightCheck && <div className="max-w-xs">
               <Label htmlFor="limit">Combined weight limit (kg)</Label>
               <Input
                 id="limit"
@@ -254,7 +263,7 @@ function Builder() {
                 aria-invalid={!!errors["limit"]}
               />
               {error("limit")}
-            </div>
+            </div>}
           </div>
         </section>
         <section className="border-t pt-7">
