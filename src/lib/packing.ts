@@ -396,3 +396,33 @@ export function freshSample(): PackingTrip {
     ],
   });
 }
+export interface OutfitIdea {
+  title: string;
+  where: string;
+  pieces: string[];
+}
+/** Outfit ideas made only from items currently in the trip, one per stop/activity. */
+export function outfitIdeas(trip: PackingTrip): OutfitIdea[] {
+  const have = new Set(trip.entries.map((e) => e.item.name));
+  const pick = (...opts: string[]) => opts.find((o) => have.has(o));
+  const ideas: OutfitIdea[] = [];
+  const push = (title: string, where: string, pieces: (string | undefined)[]) => {
+    const p = pieces.filter((x): x is string => !!x);
+    if (p.length >= 2 && !ideas.some((i) => i.title === title && i.where === where)) ideas.push({ title, where, pieces: p });
+  };
+  for (const s of trip.stops) {
+    const where = s.name || "Your trip";
+    const cold = s.coldNights || s.climate === "Cool" || s.climate === "Freezing";
+    if (s.activities.includes("city"))
+      push("Day in the city", where, [pick("T-shirt"), pick("Jeans", "Chinos", "Leggings"), pick("Sneakers"), s.rain !== "none" ? pick("Rain shell") : pick("Sunglasses")]);
+    if (s.activities.includes("hiking"))
+      push("Hiking day", where, [pick("T-shirt", "Long-sleeve shirt"), pick("Hiking pants", "Leggings"), pick("Trail runners", "Sneakers"), s.rain !== "none" ? pick("Rain shell") : pick("Baseball cap", "Sun hat"), cold ? pick("Fleece") : undefined]);
+    if (s.activities.includes("dinner"))
+      push("Dinner out", where, [pick("Evening dress") ?? pick("Going-out top", "Linen shirt"), have.has("Evening dress") ? undefined : pick("Jeans", "Chinos"), pick("Heels", "Sneakers"), cold ? pick("Scarf") : undefined]);
+    if (s.activities.includes("beach"))
+      push("Beach day", where, [pick("Swimwear"), pick("Shorts", "Linen shirt", "T-shirt"), pick("Sandals", "Flip-flops"), pick("Sun hat", "Sunglasses")]);
+    if (cold)
+      push("Cold evening", where, [pick("Thermal base layer", "Long-sleeve shirt", "T-shirt"), pick("Fleece"), pick("Puffer jacket"), pick("Beanie"), pick("Jeans", "Hiking pants")]);
+  }
+  return ideas.slice(0, 6);
+}
