@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
-  ArrowLeftRight,
+  MoreHorizontal,
   CheckCircle2,
   AlertTriangle,
   Plane,
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -551,12 +552,13 @@ function PackingList({
   onAdd: () => void;
 }) {
   const [tab, setTab] = useState<BagTab>("all");
-  const [open, setOpen] = useState<string | null>(null);
+  const latestTrip = useRef(trip);
+  latestTrip.current = trip;
   const shown = trip.entries.filter((e) => tab === "all" || e.bag === tab);
   const pct = trip.entries.length ? Math.round((done / trip.entries.length) * 100) : 0;
   return (
     <section className="py-8">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
         <div>
           <h2 className="text-2xl">Your packing list</h2>
           <p className="mt-1 text-muted-foreground" aria-live="polite">
@@ -575,12 +577,13 @@ function PackingList({
       <div
         role="tablist"
         aria-label="Filter by bag"
-        className="mb-5 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1"
+        className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-muted p-1 sm:grid-cols-4"
       >
         {BAG_TABS.map((b) => {
           const count = trip.entries.filter((e) => b.id === "all" || e.bag === b.id).length;
           return (
-            <button
+            <Button
+              variant="ghost"
               key={b.id}
               role="tab"
               aria-selected={tab === b.id}
@@ -593,10 +596,11 @@ function PackingList({
               )}
             >
               {b.label} <span className="text-muted-foreground">{count}</span>
-            </button>
+            </Button>
           );
         })}
       </div>
+      <p className="mb-2 px-2 text-muted-foreground">Packed</p>
       {shown.length === 0 && (
         <p className="py-6 text-center text-muted-foreground">Nothing in this bag yet.</p>
       )}
@@ -628,162 +632,69 @@ function PackingList({
                 const fixEntry = grp.find((x) => fixes.includes(x.item.id));
                 const fix = !!fixEntry;
                 const key = `${e.item.name}-${e.bag}`;
-                const expanded = open === key;
+
                 const allPacked = grp.every((x) => x.packed);
                 const last = grp[n - 1];
                 if (!last) return null;
-                const removeOne = (id: string) => {
-                  save(trip.entries.filter((x) => x.item.id !== id));
+                const move = (bag: PackItem["bag"]) => {
+                  save(trip.entries.map((x) => ids.has(x.item.id) ? { ...x, bag } : x));
+                  toast.success(`${e.item.name}: ${bag === "worn" ? "wear on the plane" : bagLabel(bag)}`);
                 };
+                const remove = () => {
+                  save(trip.entries.filter((x) => !ids.has(x.item.id)));
+                  toast.success(`Removed ${e.item.name}`, {
+                    duration: 10000,
+                    action: { label: "Undo", onClick: () => {
+                      const current = latestTrip.current;
+                      if (current.id !== trip.id) return;
+                      const existing = new Set(current.entries.map((x) => x.item.id));
+                      savePackingTrip({ ...current, entries: [...current.entries, ...grp.filter((x) => !existing.has(x.item.id))] });
+                    } },
+                  });
+                };
+                const wearable = ["top", "bottom", "dress", "outer", "shoes", "basics", "accessory"].includes(e.item.category)
+                  && !["Neck pillow", "Jewelry case", "Travel towel"].includes(e.item.name);
                 return (
-                  <li key={key} className={cn(fix && "bg-warning-soft")}>
-                    <div className="flex items-center gap-2 px-2 sm:px-3">
+                  <li key={key} className={cn("px-2 py-3 sm:px-3", fix && "bg-warning-soft")}>
+                    <div className="grid grid-cols-[44px_28px_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 sm:grid-cols-[44px_28px_minmax(0,1fr)_64px_88px_112px_44px] sm:items-center">
                       <Checkbox
                         id={key}
                         checked={allPacked}
-                        onCheckedChange={(p) =>
-                          save(
-                            trip.entries.map((x) =>
-                              ids.has(x.item.id) ? { ...x, packed: p === true } : x,
-                            ),
-                          )
-                        }
-                        className="size-5"
+                        onCheckedChange={(p) => save(trip.entries.map((x) => ids.has(x.item.id) ? { ...x, packed: p === true } : x))}
+                        className="size-11 shrink-0 [&_svg]:size-5"
                         aria-label={`Packed ${e.item.name}${n > 1 ? `, all ${n}` : ""}`}
                       />
-                      <ItemIcon item={e.item} className="size-7 shrink-0" />
-                      <button
-                        type="button"
-                        aria-expanded={expanded}
-                        onClick={() => setOpen(expanded ? null : key)}
-                        className="flex min-h-12 min-w-0 flex-1 items-center gap-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-ring"
-                      >
-                        <span className="min-w-0 flex-1">
-                        <span
-                          className={cn(
-                            "block font-medium",
-                            allPacked && "line-through text-muted-foreground",
-                          )}
-                        >
-                          {e.item.name}
-                          {n > 1 && <span className="text-muted-foreground"> × {n}</span>}
-                        </span>
-                        </span>
-                        {fix && (
-                          <span className="shrink-0 rounded bg-warning/15 px-1.5 text-warning">
-                            {n > 1 ? "Fewer?" : "Remove?"}
-                          </span>
-                        )}
-                        <span className="ml-auto shrink-0 text-muted-foreground">
-                          {fmtWeight(e.item.weightG * n)}
-                        </span>
-                      </button>
-                      {tab === "all" && (
-                        <span className="hidden shrink-0 rounded-full bg-secondary px-2 text-primary md:inline">
-                          {e.bag === "worn" ? "Worn" : e.bag === "carryOn" ? "Carry-on" : "Personal"}
-                        </span>
-                      )}
-                      {e.bag !== "worn" && (
-                        <div
-                          className="flex shrink-0 items-center rounded-lg border"
-                          role="group"
-                          aria-label={`${e.item.name} quantity`}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-11"
-                            aria-label={n > 1 ? `One fewer ${e.item.name}` : `Remove ${e.item.name}`}
-                            onClick={() => {
-                              removeOne(last.item.id);
-                              toast.success(
-                                n > 1 ? `${e.item.name}: ${n - 1} left` : `Removed ${e.item.name}`,
-                              );
-                            }}
-                          >
-                            {n > 1 ? <Minus aria-hidden /> : <Trash2 aria-hidden className="text-destructive" />}
-                          </Button>
-                          <span className="w-5 text-center tabular-nums" aria-live="polite">
-                            {n}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-11"
-                            aria-label={`One more ${e.item.name}`}
-                            onClick={() => {
-                              save([
-                                ...trip.entries,
-                                {
-                                  ...last,
-                                  packed: false,
-                                  item: { ...last.item, id: `${last.item.id}-${crypto.randomUUID().slice(0, 6)}` },
-                                },
-                              ]);
-                              toast.success(`${e.item.name}: ${n + 1}`);
-                            }}
-                          >
-                            <Plus aria-hidden />
-                          </Button>
-                        </div>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-11 shrink-0"
-                        aria-label={
-                          e.bag === "worn"
-                            ? `Pack ${e.item.name} in carry-on`
-                            : n > 1
-                              ? `Move one ${e.item.name} to other bag`
-                              : `Move ${e.item.name} to other bag`
-                        }
-                        title="Move to other bag"
-                        onClick={() => {
-                          const bag = e.bag === "carryOn" ? "personal" : "carryOn";
-                          save(trip.entries.map((x) => (ids.has(x.item.id) ? { ...x, bag } : x)));
-                          toast.success(
-                            `Moved ${n > 1 ? `all ${n} ` : ""}${e.item.name} to ${bagLabel(bag).toLowerCase()}`,
-                          );
-                        }}
-                      >
-                        <ArrowLeftRight aria-hidden />
-                      </Button>
-                      {e.bag === "worn" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-11 shrink-0 text-destructive"
-                          aria-label={`Remove ${e.item.name}`}
-                          onClick={() => {
-                            save(trip.entries.filter((x) => !ids.has(x.item.id)));
-                            toast.success(`Removed ${e.item.name}`);
-                          }}
-                        >
-                          <Trash2 aria-hidden />
-                        </Button>
-                      )}
-                    </div>
-                    <p className="pb-2 pl-[4.25rem] pr-3 text-muted-foreground">{e.reason}</p>
-                    {(expanded || fix) && (
-                      <div className="pb-3 pl-[4.25rem] pr-3 text-muted-foreground">
-                        <p>
-                          {e.bag === "worn" ? "Worn on the plane" : bagLabel(e.bag)}
-                        </p>
-                        {fixEntry && (
-                          <p className="mt-1 text-warning">
-                            {n > 1 ? "Pack one fewer" : "Remove"}: saves{" "}
-                            {fmtWeight(fixEntry.item.weightG)} and {fmtVolume(fixEntry.item.volumeL)}{" "}
-                            ·{" "}
-                            {fixEntry.impact === 0
-                              ? "added extra"
-                              : fixEntry.impact === 1
-                                ? "needed for only one activity or as a spare"
-                                : "lower-impact spare compared with daily essentials"}
-                          </p>
-                        )}
+                      <ItemIcon item={e.item} className="mt-2 size-7 shrink-0 sm:mt-0" />
+                      <div className="min-w-0">
+                        <p className={cn("break-words font-medium", allPacked && "line-through text-muted-foreground")}>{e.item.name}</p>
+                        <p className="mt-1 break-words text-muted-foreground">{e.reason}</p>
                       </div>
-                    )}
+                      <span className="pt-2 text-right tabular-nums text-muted-foreground sm:pt-0">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span>
+                      <div className="col-span-4 col-start-1 grid grid-cols-[minmax(0,1fr)_112px_44px] items-center gap-2 sm:col-span-3 sm:col-start-5 sm:grid-cols-[88px_112px_44px]">
+                        <span className="min-w-0 rounded-full bg-secondary px-2 py-1 text-center text-primary">{e.bag === "worn" ? "Worn" : e.bag === "carryOn" ? "Carry-on" : "Personal"}</span>
+                        <div className="grid grid-cols-[44px_24px_44px] items-center rounded-lg border" role="group" aria-label={`${e.item.name} quantity`}>
+                          <Button variant="ghost" size="icon" className="size-11" disabled={n === 1} aria-label={`One fewer ${e.item.name}`} onClick={() => {
+                            save(trip.entries.filter((x) => x.item.id !== last.item.id));
+                            toast.success(`${e.item.name}: ${n - 1}`);
+                          }}><Minus aria-hidden /></Button>
+                          <span className="text-center tabular-nums" aria-live="polite">{n}</span>
+                          <Button variant="ghost" size="icon" className="size-11" aria-label={`One more ${e.item.name}`} onClick={() => {
+                            save([...trip.entries, { ...last, packed: false, item: { ...last.item, id: crypto.randomUUID() } }]);
+                            toast.success(`${e.item.name}: ${n + 1}`);
+                          }}><Plus aria-hidden /></Button>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="size-11" aria-label={`More options for ${e.item.name}`} title={`More options for ${e.item.name}`}><MoreHorizontal aria-hidden /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="min-h-11 text-base" onSelect={() => move(e.bag === "carryOn" ? "personal" : "carryOn")}>{e.bag === "carryOn" ? "Move to personal item" : "Move to carry-on"}</DropdownMenuItem>
+                            <DropdownMenuItem className="min-h-11 text-base" disabled={e.bag !== "worn" && !wearable} onSelect={() => move(e.bag === "worn" ? "carryOn" : "worn")}>{e.bag === "worn" ? "Pack instead" : "Wear on the plane"}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="min-h-11 text-base text-destructive" onSelect={remove}>Remove</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                    {fixEntry && <p className="mt-2 pl-[84px] text-warning">{n > 1 ? "Pack one fewer" : "Remove"}: saves {fmtWeight(fixEntry.item.weightG)} and {fmtVolume(fixEntry.item.volumeL)} · lower-impact than daily essentials</p>}
                   </li>
                 );
               })}
