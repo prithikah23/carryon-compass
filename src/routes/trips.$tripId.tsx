@@ -9,15 +9,12 @@ import {
   Minus,
   RotateCcw,
   Trash2,
-  Search,
   ArrowRight,
   Luggage,
   Backpack,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
@@ -27,17 +24,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ItemIcon } from "@/components/ItemIcon";
 import { Chips, meta } from "@/components/FitControls";
 import {
-  findItems,
+  pickAddedItemBag,
   freshSample,
   totals,
   suggestedRemovals,
@@ -51,8 +41,11 @@ import {
 } from "@/lib/packing";
 import { usePackingState, savePackingTrip } from "@/lib/packing-store";
 import { fmtWeight, fmtVolume } from "@/lib/format";
-import { CATEGORIES, bagLabel, type BagId, type Item } from "@/lib/types";
+import { CATEGORIES, bagLabel, type Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { AddPackingItem } from "@/components/AddPackingItem";
+import { ItemMeasurements } from "@/components/ItemMeasurements";
+import { editItemMeasurement } from "@/lib/travel-items";
 export const Route = createFileRoute("/trips/$tripId")({
   head: () =>
     meta(
@@ -146,6 +139,9 @@ function Plan({ trip }: { trip: PackingTrip }) {
   latestTrip.current = trip;
   const [returning, setReturning] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingIds, setEditingIds] = useState<string[]>([]);
+  const editingItem = trip.entries.find((e) => editingIds.includes(e.item.id))?.item ?? null;
+  const store = usePackingState();
   const [confirm, setConfirm] = useState<"start" | "sample" | null>(null);
   const t = totals(trip, returning);
   const fixes = suggestedRemovals(trip);
@@ -157,22 +153,11 @@ function Plan({ trip }: { trip: PackingTrip }) {
       ...trip,
       entries: trip.entries.map((e) => (e.item.id === id ? { ...e, ...change } : e)),
     });
-  const add = (item: Item, bag: BagId) => {
-    savePackingTrip({
-      ...trip,
-      entries: [
-        ...trip.entries,
-        {
-          item: { ...item, id: crypto.randomUUID() },
-          bag,
-          reason: addedItemReason(item, trip),
-          packed: false,
-          essential: false,
-          impact: 0,
-        },
-      ],
-    });
-    toast.success(`Added ${item.name}`);
+  const add = (item: Item) => {
+    const current = latestTrip.current;
+    const added = { ...item, id: crypto.randomUUID(), weightSource: item.weightSource ?? "estimated" as const, volumeSource: item.volumeSource ?? "estimated" as const };
+    savePackingTrip({ ...current, entries: [...current.entries, { item: added, bag: pickAddedItemBag(current, item), reason: addedItemReason(item, current), packed: false, essential: false, impact: 0 }] });
+    toast.success(`Added ${item.name.toLowerCase()}, about ${item.weightG} g.`, { action: { label: "Edit", onClick: () => setEditingIds([added.id]) } });
   };
   return (
     <div className="mx-auto max-w-5xl px-5 py-9">
@@ -343,6 +328,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
         done={done}
         patch={patch}
         onAdd={() => setAddOpen(true)}
+        onEdit={setEditingIds}
       />
       <Outfits trip={trip} />
 
@@ -355,7 +341,13 @@ function Plan({ trip }: { trip: PackingTrip }) {
           Reset sample trip
         </Button>
       </div>
-      <AddDialog open={addOpen} onOpenChange={setAddOpen} onAdd={add} />
+      <AddPackingItem open={addOpen} onOpenChange={setAddOpen} onAdd={add} saved={store.customItems} />
+      <ItemMeasurements key={editingIds.join(",")} item={editingItem} onClose={() => setEditingIds([])} onSave={(values) => {
+        let updated = latestTrip.current;
+        if (values.weightG !== undefined) updated = editItemMeasurement(updated, editingIds, "weightG", values.weightG);
+        if (values.volumeL !== undefined) updated = editItemMeasurement(updated, editingIds, "volumeL", values.volumeL);
+        savePackingTrip(updated);
+      }} />
       <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <DialogContent>
           <DialogHeader>
@@ -391,170 +383,6 @@ function Plan({ trip }: { trip: PackingTrip }) {
     </div>
   );
 }
-function AddDialog({
-  open,
-  onOpenChange,
-  onAdd,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  onAdd: (i: Item, b: BagId) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [custom, setCustom] = useState(false);
-  const [name, setName] = useState("");
-  const [weight, setWeight] = useState("");
-  const [bag, setBag] = useState<BagId>("carryOn");
-  const [error, setError] = useState("");
-  const results = findItems(query);
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) {
-          setCustom(false);
-          setQuery("");
-          setError("");
-        }
-        onOpenChange(v);
-      }}
-    >
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Add item</DialogTitle>
-          <DialogDescription className="text-base">
-            Travel essentials and typical weights.
-          </DialogDescription>
-        </DialogHeader>
-        <Label htmlFor="add-search">Search items</Label>
-        <div className="relative">
-          <Search className="absolute left-3 top-3 size-5 text-muted-foreground" aria-hidden />
-          <Input
-            id="add-search"
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setCustom(false);
-            }}
-            placeholder="Try jacket, pants or shoes"
-            className="pl-10"
-          />
-        </div>
-        <Label htmlFor="add-bag">Bag</Label>
-        <Select value={bag} onValueChange={(v) => setBag(v as BagId)}>
-          <SelectTrigger id="add-bag">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="carryOn">Carry-on</SelectItem>
-            <SelectItem value="personal">Personal item</SelectItem>
-          </SelectContent>
-        </Select>
-        {!custom && (
-          <>
-            <ul className="divide-y">
-              {results.map((i) => (
-                <li key={i.id}>
-                  <Button
-                    variant="ghost"
-                    className="h-auto min-h-16 w-full justify-start whitespace-normal text-left"
-                    aria-label={`Add ${i.name}, ${i.weightG} g`}
-                    onClick={() => onAdd(i, bag)}
-                  >
-                    <ItemIcon item={i} className="size-8" />
-                    <span className="flex-1">
-                      {i.name}
-                      <span className="block font-normal text-muted-foreground">
-                        {fmtWeight(i.weightG)}
-                      </span>
-                    </span>
-                    <Plus aria-hidden />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-            {!results.length && <p>No matching essentials.</p>}
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCustom(true);
-                setName(query);
-              }}
-            >
-              Add as custom item
-            </Button>
-          </>
-        )}
-        {custom && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const w = Number(weight);
-              if (!name.trim() || !Number.isFinite(w) || w < 1 || w > 10000) {
-                setError("Enter a name and a weight from 1 to 10,000 g.");
-                return;
-              }
-              onAdd(
-                {
-                  id: crypto.randomUUID(),
-                  name: name.trim(),
-                  weightG: w,
-                  volumeL: Math.max(0.05, w / 300),
-                  category: "accessory",
-                  warmth: "light",
-                  formality: "casual",
-                  suitable: ["city"],
-                  maxWears: 99,
-                  color: "#476b75",
-                },
-                bag,
-              );
-              setCustom(false);
-              setQuery("");
-              setWeight("");
-              setError("");
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label htmlFor="custom-name">Name</Label>
-              <Input
-                id="custom-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={60}
-              />
-            </div>
-            <div>
-              <Label htmlFor="custom-weight">Weight (g)</Label>
-              <Input
-                id="custom-weight"
-                inputMode="numeric"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-              />
-            </div>
-            <p className="text-muted-foreground">
-              Volume estimated from weight:{" "}
-              {weight && Number(weight) > 0
-                ? fmtVolume(Math.max(0.05, Number(weight) / 300))
-                : "0 L"}
-              .
-            </p>
-            {error && (
-              <p role="alert" className="text-destructive">
-                {error}
-              </p>
-            )}
-            <Button type="submit">Add item</Button>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 type BagTab = "all" | "carryOn" | "personal" | "worn";
 const BAG_TABS: { id: BagTab; label: string }[] = [
   { id: "all", label: "All" },
@@ -569,12 +397,14 @@ function PackingList({
   done,
   patch,
   onAdd,
+  onEdit,
 }: {
   trip: PackingTrip;
   fixes: string[];
   done: number;
   patch: (id: string, change: Partial<PackItem>) => void;
   onAdd: () => void;
+  onEdit: (ids: string[]) => void;
 }) {
   const [tab, setTab] = useState<BagTab>("all");
   const latestTrip = useRef(trip);
@@ -681,20 +511,25 @@ function PackingList({
                   && !["Neck pillow", "Jewelry case", "Travel towel"].includes(e.item.name);
                 return (
                   <li key={key} className={cn("px-2 py-3 sm:px-3", fix && "bg-warning-soft")}>
-                    <div className="grid grid-cols-[44px_28px_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 sm:grid-cols-[44px_28px_minmax(0,1fr)_64px_88px_112px_44px] sm:items-center">
+                    <div className="grid grid-cols-[44px_28px_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 sm:grid-cols-[44px_28px_minmax(0,1fr)_100px_88px_112px_44px] sm:items-center">
+                      <div className="flex size-11 items-center justify-center" onClick={(event) => { if (event.target === event.currentTarget) save(trip.entries.map((x) => ids.has(x.item.id) ? { ...x, packed: !allPacked } : x)); }}>
                       <Checkbox
                         id={key}
                         checked={allPacked}
                         onCheckedChange={(p) => save(trip.entries.map((x) => ids.has(x.item.id) ? { ...x, packed: p === true } : x))}
-                        className="size-11 shrink-0 [&_svg]:size-5"
+                        className="relative size-5 shrink-0 shadow-none after:absolute after:-inset-3 after:content-[''] [&_svg]:size-4"
                         aria-label={`Packed ${e.item.name}${n > 1 ? `, all ${n}` : ""}`}
                       />
+                      </div>
                       <ItemIcon item={e.item} className="mt-2 size-7 shrink-0 sm:mt-0" />
                       <div className="min-w-0">
                         <p className={cn("break-words font-medium", allPacked && "line-through text-muted-foreground")}>{e.item.name}</p>
                         <p className="mt-1 break-words text-muted-foreground">{e.reason}</p>
                       </div>
-                      <span className="pt-2 text-right tabular-nums text-muted-foreground sm:pt-0">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span>
+                      {grp.some((x) => x.item.weightSource || x.item.custom) ? <div className="flex min-w-0 flex-col items-end">
+                        <Button variant="ghost" className="h-auto min-h-11 w-full flex-col items-end gap-0 px-1 py-1 text-right font-normal" aria-label={`Edit weight for ${e.item.name}`} onClick={() => onEdit([...ids])}><span className="tabular-nums">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span><span className="text-xs text-muted-foreground">{e.item.weightSource === "user" ? "Your weight" : "Estimated"}</span></Button>
+                        <Button variant="ghost" className="h-auto min-h-11 w-full flex-col items-end gap-0 px-1 py-1 text-right font-normal" aria-label={`Edit volume for ${e.item.name}`} onClick={() => onEdit([...ids])}><span className="tabular-nums">{fmtVolume(grp.reduce((sum, x) => sum + x.item.volumeL, 0))}</span><span className="text-xs text-muted-foreground">{e.item.volumeSource === "user" ? "Your volume" : "Estimated"}</span></Button>
+                      </div> : <span className="pt-2 text-right tabular-nums text-muted-foreground sm:pt-0">{fmtWeight(grp.reduce((sum, x) => sum + x.item.weightG, 0))}</span>}
                       <div className="col-span-4 col-start-1 grid grid-cols-[minmax(0,1fr)_112px_44px] items-center gap-2 sm:col-span-3 sm:col-start-5 sm:grid-cols-[88px_112px_44px]">
                         <span className="min-w-0 rounded-full bg-secondary px-2 py-1 text-center text-primary">{e.bag === "worn" ? "Worn" : e.bag === "carryOn" ? "Carry-on" : "Personal"}</span>
                         <div className="grid grid-cols-[44px_24px_44px] items-center rounded-lg border" role="group" aria-label={`${e.item.name} quantity`}>

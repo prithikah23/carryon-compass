@@ -242,8 +242,8 @@ function Builder() {
               onChange={(v) => setPersonal(v.includes("12") ? 12 : v.includes("18") ? 18 : 25)}
             />
             <div className="flex items-center gap-3">
-              <Checkbox id="weight-check" checked={!weightCheck} onCheckedChange={(v) => setWeightCheck(v !== true)} className="size-11" />
-              <Label htmlFor="weight-check">No weight limit — check volume only</Label>
+              <div className="flex size-11 shrink-0 items-center justify-center"><Checkbox id="weight-check" checked={!weightCheck} onCheckedChange={(v) => setWeightCheck(v !== true)} className="relative size-5 shadow-none after:absolute after:-inset-3 after:content-[''] [&_svg]:size-4" /></div>
+              <Label htmlFor="weight-check" className="flex min-h-11 items-center">No weight limit — check volume only</Label>
             </div>
             {weightCheck && <div className="max-w-xs">
               <Label htmlFor="limit">Combined weight limit (kg)</Label>

@@ -15,3 +15,8 @@
 - [x] Add dated stops, place search and editable Open-Meteo climate suggestions
 - [x] Persist climate results, keep sample offline, update privacy disclosure
 - [x] Test climate thresholds, dated lookup and unavailable-weather manual setup
+- [x] Expand quick-add search with travel estimates, synonyms and saved custom suggestions
+- [x] Add category-only custom creation and editable weight/volume with instant totals
+- [x] Make packing checkboxes visually smaller while retaining easy tap targets
+- [x] Verify requested four-item flow, saved edits and phone layout
+- [x] Replace home founder sentence with the requested Buenos Aires wording

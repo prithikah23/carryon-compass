@@ -174,6 +174,15 @@ export const AIRLINES: AirlinePreset[] = [
   { name: "easyJet", carryOnL: 40, personalL: 12, limitKg: 15, note: "Large cabin bag up to 15 kg with Up Front or Plus; free bag is under-seat only." },
 ];
 export const souvenirVolume = (kg: number) => kg * 4;
+/** Prefer essentials/tech near you, respect reserved space, and keep copies together. */
+export function pickAddedItemBag(trip: PackingTrip, item: Item): BagId {
+  const existing = trip.entries.find((e) => e.item.name === item.name && e.bag !== "worn");
+  if (existing && existing.bag !== "worn") return existing.bag;
+  const preferred: BagId = ["documents", "tech", "toiletry"].includes(item.category) ? "personal" : "carryOn";
+  const alternate = preferred === "carryOn" ? "personal" : "carryOn";
+  const fits = (bag: BagId) => trip.entries.filter((e) => e.bag === bag).reduce((sum, e) => sum + e.item.volumeL, 0) + item.volumeL + (bag === "carryOn" ? souvenirVolume(trip.souvenirKg) : 0) <= (bag === "carryOn" ? trip.carryOnL : trip.personalL);
+  return fits(preferred) ? preferred : fits(alternate) ? alternate : preferred;
+}
 export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTrip {
   const entries: PackItem[] = [];
   const days = input.stops.reduce((s, l) => s + l.days, 0);
