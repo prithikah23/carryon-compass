@@ -342,8 +342,11 @@ function Plan({ trip }: { trip: PackingTrip }) {
         </Button>
       </div>
       <AddPackingItem open={addOpen} onOpenChange={setAddOpen} onAdd={add} saved={store.customItems} />
-      <ItemMeasurements key={editingIds.join(",")} item={editingItem} onClose={() => setEditingIds([])} onSave={(field, value) => {
-        savePackingTrip(editItemMeasurement(latestTrip.current, editingIds, field, value));
+      <ItemMeasurements key={editingIds.join(",")} item={editingItem} onClose={() => setEditingIds([])} onSave={(values) => {
+        let updated = latestTrip.current;
+        if (values.weightG !== undefined) updated = editItemMeasurement(updated, editingIds, "weightG", values.weightG);
+        if (values.volumeL !== undefined) updated = editItemMeasurement(updated, editingIds, "volumeL", values.volumeL);
+        savePackingTrip(updated);
       }} />
       <Dialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <DialogContent>

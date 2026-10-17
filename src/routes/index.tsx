@@ -44,7 +44,7 @@ function Home() {
             </Button>
           </div>
           <p className="mt-7 max-w-lg text-muted-foreground">
-            Built after packing for a desert, a glacier, and city dinners with no checked bag.
+            Born from a trip to Buenos Aires, the Atacama, and Patagonia with just a carry-on.
           </p>
         </div>
         <svg

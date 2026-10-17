@@ -19,3 +19,4 @@
 - [ ] Add category-only custom creation and editable weight/volume with instant totals
 - [ ] Make packing checkboxes visually smaller while retaining easy tap targets
 - [ ] Verify requested four-item flow, saved edits and phone layout
+- [ ] Replace home founder sentence with the requested Buenos Aires wording
