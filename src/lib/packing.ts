@@ -15,12 +15,12 @@ export interface Stop {
   rain: "none" | "some" | "lots";
   coldNights: boolean;
   activities: PackingActivity[];
-  latitude?: number;
-  longitude?: number;
-  startDate?: string;
-  endDate?: string;
-  weather?: ClimateResult;
-  manualClimateKey?: string;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+  weather?: ClimateResult | undefined;
+  manualClimateKey?: string | undefined;
 }
 export interface PackItem {
   item: Item;

@@ -10,10 +10,10 @@ import { climateChips, climateKey, lookupClimate, searchPlaces, type Place } fro
 
 export function StopClimate({ stop, dates, patch, invalid, describedBy }: {
   stop: Stop;
-  dates?: { start: string; end: string };
+  dates?: { start: string; end: string } | undefined;
   patch: (id: string, change: Partial<Stop>) => void;
   invalid: boolean;
-  describedBy?: string;
+  describedBy?: string | undefined;
 }) {
   const [places, setPlaces] = useState<Place[]>([]);
   const [searchState, setSearchState] = useState("");
