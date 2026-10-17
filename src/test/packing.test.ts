@@ -183,4 +183,13 @@ describe("Fresh packing journey rules", () => {
     expect(totals(changeLaundry(trip, "Quick sink wash")).overG).toBe(0);
     expect(suggestedFixes(freshSample())).toEqual([]);
   });
+  it("keeps entry IDs unique when quantities change after an individual removal", () => {
+    const original = changeLaundry(freshSample(), "No washing");
+    const first = original.entries.find((e) => e.item.name === "Underwear");
+    if (!first) throw new Error("Expected underwear");
+    const reduced = { ...original, entries: original.entries.filter((e) => e.item.id !== first.item.id) };
+    const changed = changeLaundry(changeLaundry(reduced, "Quick sink wash"), "No washing");
+    expect(new Set(changed.entries.map((e) => e.item.id)).size).toBe(changed.entries.length);
+    expect(count(changed, "Underwear")).toBe(11);
+  });
 });

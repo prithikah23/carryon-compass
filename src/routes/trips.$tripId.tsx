@@ -142,6 +142,8 @@ function Meter({
 }
 function Plan({ trip }: { trip: PackingTrip }) {
   const navigate = useNavigate();
+  const latestTrip = useRef(trip);
+  latestTrip.current = trip;
   const [returning, setReturning] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [confirm, setConfirm] = useState<"start" | "sample" | null>(null);
@@ -237,7 +239,16 @@ function Plan({ trip }: { trip: PackingTrip }) {
           {rankedFixes.map((fix) => <li key={fix.kind === "remove" ? fix.id : "laundry"}>
             <Button variant="outline" className="h-auto min-h-11 max-w-full whitespace-normal text-left" onClick={() => {
               if (fix.kind === "laundry") savePackingTrip(changeLaundry(trip, "Quick sink wash"));
-              else savePackingTrip({ ...trip, entries: trip.entries.filter((e) => e.item.id !== fix.id) });
+              else {
+                const removed = trip.entries.find((e) => e.item.id === fix.id);
+                if (!removed) return;
+                savePackingTrip({ ...trip, entries: trip.entries.filter((e) => e.item.id !== fix.id) });
+                toast.success(`Removed one ${removed.item.name}`, { duration: 10000, action: { label: "Undo", onClick: () => {
+                  const current = latestTrip.current;
+                  if (current.id !== trip.id || current.entries.some((e) => e.item.id === removed.item.id)) return;
+                  savePackingTrip({ ...current, entries: [...current.entries, removed] });
+                } } });
+              }
             }}>{fix.label} to save {fix.kind === "laundry" ? "about " : ""}{fmtWeight(fix.savedG)}</Button>
           </li>)}
         </ol>}

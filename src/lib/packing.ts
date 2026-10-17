@@ -205,7 +205,7 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   const thermalCount = freezing.length ? 1 : 0;
   const dressyCount = dinner.length && topCount > 1 ? 1 : 0;
   const layerCount = cold.length && topCount - dressyCount - thermalCount > 1 ? 1 : 0;
-  const topReason = `Worn 2 to 3 times · ${washReason} · ${days} days`;
+  const topReason = `Worn 2 to 3 times · ${laundry === "No washing" ? "No washing planned" : washReason} · ${days} days`;
   add("T-shirt", `${topReason} in ${all}`, Math.max(0, topCount - dressyCount - layerCount - thermalCount), false, 2);
   if (layerCount) add("Long-sleeve shirt", `Cool days or cold nights in ${destinations(cold)} · ${topReason}`, 1, false, 3);
   if (dressyCount) add("Linen shirt", `Dinner out in ${destinations(dinner)} · ${topReason}`, 1, false, 2);
@@ -305,6 +305,7 @@ export function changeLaundry(trip: PackingTrip, laundry: LaundryOption): Packin
   const affected = (e: PackItem) => ["Underwear", "Socks"].includes(e.item.name) || ["top", "bottom"].includes(e.item.category);
   const names = new Set([...previous.entries, ...next.entries].filter(affected).map((e) => e.item.name));
   const entries = trip.entries.filter((e) => !names.has(e.item.name));
+  const usedIds = new Set(trip.entries.map((e) => e.item.id));
   for (const name of names) {
     const current = trip.entries.filter((e) => e.item.name === name);
     const target = next.entries.filter((e) => e.item.name === name);
@@ -314,7 +315,10 @@ export function changeLaundry(trip: PackingTrip, laundry: LaundryOption): Packin
       const fresh = target[n];
       if (!fresh) continue;
       const saved = current[n];
-      entries.push(saved ? { ...saved, reason: fresh.reason } : { ...fresh, item: { ...fresh.item, id: `${trip.id}-laundry-${name}-${n}` }, bag: current[0]?.bag ?? fresh.bag });
+      let id = `${trip.id}-laundry-${name}-${n}`;
+      while (usedIds.has(id)) id += "-new";
+      usedIds.add(id);
+      entries.push(saved ? { ...saved, reason: fresh.reason } : { ...fresh, item: { ...fresh.item, id }, bag: current[0]?.bag ?? fresh.bag });
     }
   }
   return { ...trip, laundry, rulesVersion: PACKING_RULES_VERSION, entries };
