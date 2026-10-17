@@ -29,6 +29,7 @@ export interface PackingTrip {
   souvenirKg: number;
   entries: PackItem[];
   sample: boolean;
+  rulesVersion?: number;
 }
 const names = [
   "T-shirt",
@@ -119,6 +120,15 @@ export const TRAVEL_CATALOG: Item[] = [
   extra("Contact lenses", "toiletry", 200, 0.3),
   extra("Laptop charger", "tech", 250, 0.3),
 ];
+export function addedItemReason(item: Item, trip: PackingTrip): string {
+  const relevant = trip.stops.filter((s) =>
+    item.category === "shoes" || item.category === "dress" || item.category === "top" || item.category === "bottom"
+      ? s.activities.some((activity) => item.suitable.includes(activity))
+      : true,
+  );
+  const stops = relevant.length ? relevant : trip.stops;
+  return `Your chosen ${item.name.toLowerCase()} for ${stops.map((s) => s.name).join(" and ")} · ${trip.stops.reduce((sum, s) => sum + s.days, 0)} days`;
+}
 export function findItems(q: string) {
   const words = q.toLowerCase().trim().split(/\s+/);
   return TRAVEL_CATALOG.filter((i) =>
@@ -168,71 +178,71 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
       });
   };
   const destinations = (stops: Stop[]) => stops.map((s) => s.name).join(" and ");
-  const all = `Reused across ${destinations(input.stops)}`;
-  const basics = Math.min(15, Math.ceil(days * 1.4));
-  add("Underwear", `About 1.5 a day for ${days} days, with spares`, basics, true, 5);
-  add("Socks", `About 1.5 a day for ${days} days, with spares`, basics, true, 5);
-  const tees = Math.min(8, Math.ceil(days * 0.6));
-  add("T-shirt", `${tees} tops rotated across ${days} days`, tees, false, 2);
-  if (days >= 5) add("Long-sleeve shirt", `Layering top for cooler days · ${all.toLowerCase()}`, 1, false, 2);
+  const all = destinations(input.stops);
   const hiking = input.stops.filter((s) => s.activities.includes("hiking"));
   const dinner = input.stops.filter((s) => s.activities.includes("dinner"));
   const beach = input.stops.filter((s) => s.activities.includes("beach"));
   const city = input.stops.filter((s) => s.activities.includes("city"));
-  if (hiking.length) add("Hiking pants", `Hiking in ${destinations(hiking)}`, 1, false, 3);
-  add("Jeans", `Everyday bottom · ${all.toLowerCase()}`, 1, false, 3);
-  add("Leggings", `Spare bottom · ${all.toLowerCase()}`, 1, false, 1);
-  if (days > 7 && !hiking.length)
-    add(dinner.length ? "Chinos" : "Shorts", `Third bottom for ${days} days`, 1, false, 1);
-  add("Sleepwear", `Sets of PJs rotated over ${days} nights`, days > 5 ? 2 : 1, true, 5);
-  add("Toiletry kit", "Daily essentials kept together", 1, true, 5);
-  add("Contact lenses", "Daily lenses and travel solution", 1, true, 4);
-  add("Phone charger", "Keeps your phone charged on every leg", 1, true, 5);
-  add("Power bank", "Portable charger for long travel days", 1, false, 3);
-  add("Travel adapter", "Universal adapter for foreign sockets", 1, true, 4);
-  if (days >= 5) {
-    add("Laptop", "For work, photos and planning on a long trip", 1, false, 2);
-    add("Laptop charger", "Charges your laptop", 1, false, 2);
-  }
-  add("Passport", "Travel document · keep it with you", 1, true, 10);
-  add("Wallet", "Money and cards · keep them with you", 1, true, 10);
-  add("Sunglasses", `Bright days in ${destinations(input.stops)}`, 1, false, 2);
-  const cold = input.stops.filter(
-    (s) => s.climate === "Cool" || s.climate === "Freezing" || s.coldNights,
-  );
-  if (cold.length) {
-    add("Fleece", `Needed for cold nights or cool days in ${destinations(cold)}`, 1, false, 4);
-    add("Puffer jacket", `Warm protection in ${destinations(cold)}`, 1, false, 4);
-    add("Beanie", `Warm head on cold nights in ${destinations(cold)}`, 1, false, 2);
-    add("Scarf", `Extra warmth in ${destinations(cold)}, doubles as a dinner accessory`, 1, false, 2);
-  }
+  const cold = input.stops.filter((s) => s.climate === "Cool" || s.climate === "Freezing" || s.coldNights);
   const freezing = input.stops.filter((s) => s.climate === "Freezing");
-  if (freezing.length) {
-    for (const n of ["Thermal base layer", "Gloves"])
-      add(n, `Needed for freezing weather in ${destinations(freezing)}`, 1, false, 4);
-  }
   const rain = input.stops.filter((s) => s.rain !== "none");
-  if (rain.length) add("Rain shell", `Rain protection in ${destinations(rain)}`, 1, false, 4);
-  if (hiking.length)
-    add("Trail runners", `Hiking in ${destinations(hiking)}`, 1, false, 4);
-  if (city.length || !hiking.length)
-    add("Sneakers", `Everyday walking${city.length ? ` in ${destinations(city)}` : ""}`, 1, false, 3);
-  if (dinner.length) {
-    add("Linen shirt", `Dressier top for dinner in ${destinations(dinner)}`, 1, false, 1);
-    add("Going-out top", `Night out in ${destinations(dinner)}`, 1, false, 1);
-    add("Evening dress", `One dressy outfit for dinner in ${destinations(dinner)}`, 1, false, 1);
-    add("Heels", `Dressy shoes for dinner in ${destinations(dinner)}`, 1, false, 1);
-  }
-  if (beach.length) {
-    add("Swimwear", `Beach days in ${destinations(beach)}`, 1, false, 1);
-    add("Sandals", `Beach and city walking in ${destinations(beach)}`, 1, false, 1);
-    add("Sunscreen", `Sun protection in ${destinations(beach)}`, 1, true, 4);
-  }
-  if (days >= 5) add("Flip-flops", "Hostel showers and lounging", 1, false, 1);
   const sun = input.stops.filter((s) => s.climate === "Hot" || s.climate === "Warm");
-  if (sun.length) {
-    if (hiking.length) add("Baseball cap", `Sun and shade on hikes in ${destinations(sun)}`, 1, false, 1);
-    else add("Sun hat", `Sun protection in ${destinations(sun)}`, 1, false, 2);
+  const basics = Math.min(7, days);
+  const dailyReason = days > 7
+    ? `Plan to rewash once · Rewash once, trip is ${days} days`
+    : `One per day, trip is ${days} days`;
+  add("Underwear", dailyReason, basics, true, 5);
+  add("Socks", dailyReason, basics, true, 5);
+  // Dressier and long-sleeve tops share the same five-top allowance.
+  const topCount = Math.min(5, Math.ceil(days / 2));
+  const dressyCount = dinner.length && topCount > 1 ? 1 : 0;
+  const layerCount = cold.length && topCount - dressyCount > 1 ? 1 : 0;
+  add("T-shirt", `Rotate across ${days} days in ${all}${days > 7 ? " · Plan to rewash once" : ""}`, topCount - dressyCount - layerCount, false, 2);
+  if (layerCount) add("Long-sleeve shirt", `Cool days or cold nights in ${destinations(cold)}`, 1, false, 3);
+  if (dressyCount) add("Linen shirt", `Dinner out in ${destinations(dinner)}`, 1, false, 2);
+  if (hiking.length) add("Hiking pants", `Hiking in ${destinations(hiking)}`, 1, false, 3);
+  if (city.length || dinner.length) add("Jeans", `City days${dinner.length ? " and dinner" : ""} in ${destinations(input.stops.filter((s) => s.activities.includes("city") || s.activities.includes("dinner")))}`, 1, false, 3);
+  if (beach.length) add("Shorts", `Beach days in ${destinations(beach)}`, 1, false, 2);
+  if (!hiking.length && !city.length && !dinner.length && !beach.length)
+    add("Jeans", `Everyday wear in ${all}`, 1, false, 3);
+  // A second bottom is the personal-item backup, not a third daily outfit.
+  if (entries.filter((e) => e.item.category === "bottom").length < 2)
+    add("Leggings", `Backup outfit for ${all} in case your carry-on is gate-checked`, 1, false, 1);
+  add("Sleepwear", `Rotate over ${days} nights in ${all}`, days > 7 ? 2 : 1, true, 5);
+  add("Toiletry kit", `Daily washing and grooming for ${days} days in ${all}`, 1, true, 5);
+  add("Phone charger", `Phone charging on every leg: ${all}`, 1, true, 5);
+  if (days >= 5) add("Power bank", `Backup phone power on travel days between ${all}`, 1, false, 3);
+  add("Travel adapter", `Socket adapter for overnight stops in ${all}; check local plug types`, 1, false, 2);
+  add("Passport", `Travel document for ${all} · keep it with you`, 1, true, 10);
+  add("Wallet", `Money and cards for ${all} · keep them with you`, 1, true, 10);
+  if (cold.length) {
+    add("Fleece", `Cold nights or cool days in ${destinations(cold)}`, 1, false, 4);
+    add("Puffer jacket", `Warm protection in ${destinations(cold)}`, 1, false, 4);
+    add("Beanie", `Cold nights or cool days in ${destinations(cold)}`, 1, false, 2);
+    add("Scarf", `Warmth in ${destinations(cold)}`, 1, false, 2);
+  }
+  if (freezing.length)
+    for (const name of ["Thermal base layer", "Gloves"])
+      add(name, `Freezing weather in ${destinations(freezing)}`, 1, false, 4);
+  if (rain.length) add("Rain shell", `Rain protection in ${destinations(rain)}`, 1, false, 4);
+  // Prioritize required activity footwear; the worn pair counts toward the cap.
+  if (hiking.length) add("Trail runners", `Hiking in ${destinations(hiking)}`, 1, false, 4);
+  if (city.length || (!hiking.length && !beach.length))
+    add("Sneakers", `Walking in ${destinations(city.length ? city : input.stops)}`, 1, false, 3);
+  if (beach.length) {
+    add("Swimwear", `Beach days in ${destinations(beach)}`, 1, false, 2);
+    add("Sandals", `Beach walking in ${destinations(beach)}`, 1, false, 2);
+    add("Sunscreen", `Sun protection on beach days in ${destinations(beach)}`, 1, true, 4);
+  }
+  if (dinner.length) {
+    add("Evening dress", `Dinner out in ${destinations(dinner)}`, 1, false, 1);
+    if (entries.filter((e) => e.item.category === "shoes").length < 3)
+      add("Heels", `Dinner out in ${destinations(dinner)}`, 1, false, 1);
+  }
+  if (sun.length || beach.length) {
+    const sunnyStops = input.stops.filter((s) => sun.includes(s) || beach.includes(s));
+    add("Sunglasses", `Bright days in ${destinations(sunnyStops)}`, 1, false, 2);
+    add(hiking.length ? "Baseball cap" : "Sun hat", `Sun protection in ${destinations(sunnyStops)}`, 1, false, 2);
   }
   const shoe = entries
     .filter((e) => e.item.category === "shoes")
@@ -253,7 +263,10 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
     const single = entries.find(
       (e) => e.bag === "carryOn" && e.item.category === category && groupOf(e.item.name).length === 1,
     );
-    if (single) single.bag = "personal";
+    if (single) {
+      single.bag = "personal";
+      single.reason += " · Backup outfit in case your carry-on is gate-checked";
+    }
   }
   const names = [...new Set(entries.filter((e) => e.bag === "carryOn" && !e.essential).map((e) => e.item.name))];
   names.sort((a, b) => (groupOf(a)[0]?.impact ?? 0) - (groupOf(b)[0]?.impact ?? 0));
@@ -266,7 +279,7 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
     )
       for (const e of grp) e.bag = "personal";
   }
-  return { ...input, entries };
+  return { ...input, rulesVersion: 3, entries };
 }
 export function totals(trip: PackingTrip, returning = false) {
   const bags = { carryOn: { g: 0, l: 0 }, personal: { g: 0, l: 0 } };
@@ -353,7 +366,7 @@ export function freshSample(): PackingTrip {
     id: "sample-trip",
     carryOnL: 40,
     personalL: 18,
-    limitKg: 12,
+    limitKg: 10,
     souvenirKg: 1,
     sample: true,
     stops: [

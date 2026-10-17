@@ -35,7 +35,9 @@ function get(): State {
               Array.isArray(data.stops) &&
               Array.isArray(data.entries) &&
               Number.isFinite(data.limitKg)
-            ? mergeCopies(data)
+            ? data.sample && data.rulesVersion !== 3
+              ? freshSample()
+              : mergeCopies(data)
             : freshSample(),
     };
   } catch {
