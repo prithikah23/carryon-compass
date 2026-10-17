@@ -40,6 +40,7 @@ import {
   freshSample,
   totals,
   suggestedRemovals,
+  outfitIdeas,
   type PackingTrip,
   type PackItem,
 } from "@/lib/packing";
@@ -316,6 +317,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
         patch={patch}
         onAdd={() => setAddOpen(true)}
       />
+      <Outfits trip={trip} />
 
       <div className="flex flex-wrap gap-3 border-t pt-5">
         <Button variant="outline" onClick={() => setConfirm("start")}>
@@ -783,6 +785,37 @@ function PackingList({
           </div>
         );
       })}
+    </section>
+  );
+}
+
+function Outfits({ trip }: { trip: PackingTrip }) {
+  const ideas = outfitIdeas(trip);
+  if (!ideas.length) return null;
+  const find = (name: string) => trip.entries.find((e) => e.item.name === name)?.item;
+  return (
+    <section aria-labelledby="outfits" className="border-t pt-6">
+      <h2 id="outfits" className="text-2xl">Outfits you can make</h2>
+      <p className="mt-1 text-muted-foreground">Built only from what's already in your bags.</p>
+      <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+        {ideas.map((o) => (
+          <li key={o.title + o.where} className="rounded-xl border bg-card p-4">
+            <p className="text-sm font-medium uppercase tracking-wide text-primary">{o.where}</p>
+            <h3 className="text-lg font-semibold">{o.title}</h3>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {o.pieces.map((p) => {
+                const item = find(p);
+                return (
+                  <li key={p} className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
+                    {item && <ItemIcon item={item} className="size-5" />}
+                    {p}
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

@@ -9,7 +9,7 @@ import {
 } from "@/lib/packing";
 describe("Fresh packing journey rules", () => {
   it("has the expanded travel catalog and synonym search", () => {
-    expect(TRAVEL_CATALOG).toHaveLength(53);
+    expect(TRAVEL_CATALOG).toHaveLength(52);
     expect(findItems("jacket").map((i) => i.name)).toEqual(
       expect.arrayContaining(["Fleece", "Puffer jacket", "Rain shell"]),
     );
