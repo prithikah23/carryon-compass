@@ -231,8 +231,8 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   if (days >= 5) add("Flip-flops", "Hostel showers and lounging", 1, false, 1);
   const sun = input.stops.filter((s) => s.climate === "Hot" || s.climate === "Warm");
   if (sun.length) {
-    add("Sun hat", `Sun protection in ${destinations(sun)}`, 1, false, 2);
-    if (hiking.length) add("Baseball cap", `Shade on hikes in ${destinations(hiking)}`, 1, false, 1);
+    if (hiking.length) add("Baseball cap", `Sun and shade on hikes in ${destinations(sun)}`, 1, false, 1);
+    else add("Sun hat", `Sun protection in ${destinations(sun)}`, 1, false, 2);
   }
   const shoe = entries
     .filter((e) => e.item.category === "shoes")
@@ -353,7 +353,7 @@ export function freshSample(): PackingTrip {
     id: "sample-trip",
     carryOnL: 40,
     personalL: 18,
-    limitKg: 10,
+    limitKg: 12,
     souvenirKg: 1,
     sample: true,
     stops: [
