@@ -1,5 +1,7 @@
 # Roadmap — fresh "Will everything fit?" brief
 
+- [x] Update uncapped no-washing clothing quantities, matching reasons and comparison note
+- [x] Verify ranked fixes and instant laundry updates with tests and the live app
 - [x] Apply Playful Neo-Craft styling across all three pages and add an interactive, data-derived boarding pass
 - [x] Verify packing interactions and desktop/375px layouts after the visual refresh
 - [x] Replace prior screens with Home, one-page setup and packing plan

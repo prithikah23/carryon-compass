@@ -33,6 +33,7 @@ import {
   suggestedRemovals,
   suggestedFixes,
   changeLaundry,
+  laundryDifference,
   LAUNDRY_OPTIONS,
   outfitIdeas,
   addedItemReason,
@@ -223,9 +224,10 @@ function Plan({ trip }: { trip: PackingTrip }) {
           </p>
         )}
         {rankedFixes.length > 0 && <ol className="mt-4 space-y-2">
-          {rankedFixes.map((fix) => <li key={fix.kind === "remove" ? fix.id : "laundry"}>
+          {rankedFixes.map((fix) => <li key={fix.kind === "laundry" ? "laundry" : `${fix.kind}-${fix.id}`}>
             <Button variant="outline" className="h-auto min-h-11 max-w-full whitespace-normal text-left" onClick={() => {
               if (fix.kind === "laundry") savePackingTrip(changeLaundry(trip, "Quick sink wash"));
+              else if (fix.kind === "wear") patch(fix.id, { bag: "worn" });
               else {
                 const removed = trip.entries.find((e) => e.item.id === fix.id);
                 if (!removed) return;
@@ -236,7 +238,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
                   savePackingTrip({ ...current, entries: [...current.entries, removed] });
                 } } });
               }
-            }}>{fix.label} to save {fix.kind === "laundry" ? "about " : ""}{fmtWeight(fix.savedG)}</Button>
+            }}>{fix.label} to save {fmtWeight(fix.savedG)}</Button>
           </li>)}
         </ol>}
       </section>
@@ -413,8 +415,10 @@ function PackingList({
   latestTrip.current = trip;
   const shown = trip.entries.filter((e) => tab === "all" || e.bag === tab);
   const pct = trip.entries.length ? Math.round((done / trip.entries.length) * 100) : 0;
+  const difference = trip.laundry === "No washing" ? laundryDifference(trip) : null;
   return (
     <section className="craft-list py-8">
+      {difference && <p className="mb-4 text-muted-foreground" aria-live="polite">No washing adds {difference.items} items and {(difference.weightG / 1000).toFixed(2)} kg compared to a quick sink wash.</p>}
       <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
         <div>
           <h2 className="text-2xl">Your packing list</h2>
