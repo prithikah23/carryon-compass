@@ -51,23 +51,25 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-ticket: var(--ticket);
+  --shadow-craft: 4px 4px 0 var(--craft-shadow);
 }
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.995 0.002 200);
-  --foreground: oklch(0.25 0.03 235);
+  --background: oklch(0.985 0.006 90);
+  --foreground: oklch(0.25 0.035 260);
   --card: oklch(0.997 0.003 85);
   --card-foreground: oklch(0.25 0.03 235);
   --popover: oklch(0.997 0.003 85);
   --popover-foreground: oklch(0.25 0.03 235);
-  --primary: oklch(0.44 0.075 205);
+  --primary: oklch(0.52 0.17 30);
   --primary-foreground: oklch(0.99 0.005 85);
-  --secondary: oklch(0.94 0.022 195);
-  --secondary-foreground: oklch(0.3 0.05 210);
+  --secondary: oklch(0.93 0.035 155);
+  --secondary-foreground: oklch(0.32 0.065 155);
   --muted: oklch(0.955 0.012 85);
   --muted-foreground: oklch(0.47 0.025 235);
-  --accent: oklch(0.6 0.13 45);
+  --accent: oklch(0.46 0.09 155);
   --accent-foreground: oklch(0.99 0.005 85);
   --destructive: oklch(0.52 0.18 27);
   --destructive-foreground: oklch(0.99 0.005 85);
@@ -77,9 +79,11 @@
   --warning-soft: oklch(0.95 0.05 85);
   --danger-soft: oklch(0.95 0.035 27);
   --souvenir: oklch(0.6 0.13 45);
-  --border: oklch(0.9 0.014 85);
-  --input: oklch(0.86 0.016 85);
-  --ring: oklch(0.44 0.075 205);
+  --border: oklch(0.77 0.018 260);
+  --input: oklch(0.65 0.025 260);
+  --ring: oklch(0.52 0.17 30);
+  --ticket: oklch(0.94 0.07 90);
+  --craft-shadow: oklch(0.25 0.035 260 / 0.16);
   --chart-1: oklch(0.44 0.075 205);
   --chart-2: oklch(0.6 0.13 45);
   --chart-3: oklch(0.47 0.1 155);
@@ -93,6 +97,56 @@
   --sidebar-accent-foreground: oklch(0.3 0.05 210);
   --sidebar-border: oklch(0.9 0.014 85);
   --sidebar-ring: oklch(0.44 0.075 205);
+}
+
+.ticket-label { font-family: ui-monospace, SFMono-Regular, monospace; font-size: .75rem; font-weight: 600; letter-spacing: 0; }
+.craft-nav { border-bottom: 2px solid var(--foreground); }
+.craft-nav a:first-child > svg { width: 36px; height: 36px; padding: 6px; border: 1.5px solid var(--foreground); border-radius: 50%; background: var(--ticket); color: var(--foreground); }
+.home-travel { padding: 48px 0 40px; }
+.home-heading { max-width: 850px; font-size: 64px; line-height: 1.08; }
+.home-heading em { color: var(--primary); font-style: italic; }
+.home-intro { max-width: 600px; }
+.boarding-pass { display: grid; grid-template-columns: minmax(0,1fr) 270px; margin-top: 36px; border: 2px solid var(--foreground); border-radius: 8px; background: var(--card); box-shadow: var(--shadow-craft); overflow: hidden; }
+.pass-main { padding: 24px 28px; }
+.pass-route { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 24px; padding: 28px 0; }
+.route-dash { position: absolute; right: -10px; top: 10px; color: var(--primary); }
+.pass-stub { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; padding: 24px; border-left: 2px dashed var(--foreground); background: var(--ticket); }
+.pass-stamp { display: flex; align-items: center; justify-content: center; gap: 8px; align-self: center; padding: 10px 16px; border: 2px solid var(--success); color: var(--success); font-family: ui-monospace, monospace; font-weight: 700; transform: rotate(-4deg); }
+.airline-tag { border: 1.5px solid var(--foreground); border-radius: 8px; box-shadow: 2px 2px 0 var(--craft-shadow); }
+.airline-tag:hover { background: var(--ticket); transform: translateY(-2px); }
+.craft-setup > p:first-child, .craft-plan .ticket-eyebrow { font-family: ui-monospace, monospace; font-size: .75rem; }
+.craft-setup form > section { border-top: 2px solid var(--foreground); padding-top: 24px; }
+.craft-setup form > section:first-child > h2::before { content: '01 / '; color: var(--primary); font-family: ui-monospace, monospace; font-size: 16px; }
+.craft-setup form > section:nth-child(3) > h2::before { content: '02 / '; color: var(--primary); font-family: ui-monospace, monospace; font-size: 16px; }
+.craft-setup form > section:first-child > .divide-y > fieldset { border-bottom: 1.5px dashed var(--border); padding-top: 20px; padding-bottom: 24px; }
+.craft-setup form > section:first-child > .divide-y > fieldset h3 { display: inline-flex; background: var(--ticket); border: 1px solid var(--foreground); padding: 4px 12px; transform: rotate(-2deg); }
+.craft-setup input, .craft-setup select { border-width: 1.5px; background: var(--card); }
+.craft-verdict { border-width: 2px 0; background: var(--success-soft); padding: 24px 16px; }
+.craft-verdict[data-fit='false'] { background: var(--danger-soft); }
+.craft-bag { border-top: 2px solid var(--foreground); padding-top: 16px; }
+.craft-bag > h3 { padding-bottom: 16px; border-bottom: 1px dashed var(--border); }
+.craft-plan [role='meter'] { height: 16px; border: 1px solid var(--foreground); border-radius: 4px; }
+.craft-worn { border: 1.5px dashed var(--accent); background: var(--secondary); }
+.craft-list > div > h3 { padding: 8px 0; color: var(--foreground); }
+.craft-list > div > ul { border-width: 1.5px; border-radius: 8px; background: var(--card); }
+.craft-list > div > ul > li:hover { background: var(--muted); }
+.craft-outfits > ul > li { border: 1.5px solid var(--foreground); border-radius: 8px; box-shadow: 3px 3px 0 var(--craft-shadow); }
+@media (max-width: 639px) {
+  .home-travel { padding-top: 32px; }
+  .home-heading { font-size: 42px; }
+  .boarding-pass { grid-template-columns: minmax(0,1fr); margin-top: 28px; }
+  .pass-main { padding: 20px 16px; }
+  .pass-route { gap: 16px; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 20px 0; }
+  .pass-main > .grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+  .pass-stub { border-left: 0; border-top: 2px dashed var(--foreground); padding: 16px; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; gap: 16px; }
+  .pass-stub > a { grid-column: 2; }
+  .pass-stamp { padding: 8px; font-size: .875rem; }
+  .craft-nav a:first-child { font-size: 16px; gap: 6px; }
+  .craft-nav a:first-child > svg { width: 30px; height: 30px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .boarding-pass { animation: ticket-arrive .55s ease-out both; }
+  @keyframes ticket-arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 }
 
 @layer base {
