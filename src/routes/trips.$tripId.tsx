@@ -160,9 +160,10 @@ function Plan({ trip }: { trip: PackingTrip }) {
     toast.success(`Added ${item.name.toLowerCase()}, about ${item.weightG} g.`, { action: { label: "Edit", onClick: () => setEditingIds([added.id]) } });
   };
   return (
-    <div className="mx-auto max-w-5xl px-5 py-9">
+    <div className="craft-plan mx-auto max-w-5xl px-5 py-9">
       <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
+          <p className="ticket-eyebrow mb-3 text-primary">PACKING PLAN / YOUR NEXT ADVENTURE</p>
           <div className="mb-2 flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-semibold sm:text-4xl">Will everything fit?</h1>
             {trip.sample && (
@@ -186,7 +187,8 @@ function Plan({ trip }: { trip: PackingTrip }) {
         <Chips label="Can you do laundry on this trip?" options={LAUNDRY_OPTIONS} value={trip.laundry ?? "Quick sink wash"} onChange={(laundry) => savePackingTrip(changeLaundry(trip, laundry))} />
       </div>
       <section
-        className={cn("border-y py-6", fits ? "border-success/30" : "border-destructive/30")}
+        data-fit={fits}
+        className={cn("craft-verdict border-y py-6", fits ? "border-success/30" : "border-destructive/30")}
         aria-live="polite"
       >
         <div className="flex items-start gap-3">
@@ -260,7 +262,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
         </div>
         <div className="grid gap-8 sm:grid-cols-2">
           {(["carryOn", "personal"] as const).map((b) => (
-            <div key={b}>
+            <div className="craft-bag" key={b}>
               <h3 className="mb-4 flex items-center gap-2 font-sans text-xl font-semibold">
                 {b === "carryOn" ? (
                   <Luggage className="size-5 text-accent" aria-hidden />
@@ -304,7 +306,7 @@ function Plan({ trip }: { trip: PackingTrip }) {
         </div>
       </section>
       {t.wornG > 0 && (
-        <section className="border-y bg-secondary/40 px-4 py-5">
+        <section className="craft-worn border-y bg-secondary/40 px-4 py-5">
           <h2 className="flex items-center gap-2 text-xl">
             <Plane className="size-5 text-primary" aria-hidden />
             Wear on the plane
@@ -412,7 +414,7 @@ function PackingList({
   const shown = trip.entries.filter((e) => tab === "all" || e.bag === tab);
   const pct = trip.entries.length ? Math.round((done / trip.entries.length) * 100) : 0;
   return (
-    <section className="py-8">
+    <section className="craft-list py-8">
       <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
         <div>
           <h2 className="text-2xl">Your packing list</h2>
@@ -571,7 +573,7 @@ function Outfits({ trip }: { trip: PackingTrip }) {
   if (!ideas.length) return null;
   const find = (name: string) => trip.entries.find((e) => e.item.name === name)?.item;
   return (
-    <section aria-labelledby="outfits" className="border-t pt-6">
+    <section aria-labelledby="outfits" className="craft-outfits border-t py-6">
       <h2 id="outfits" className="text-2xl">Outfits you can make</h2>
       <p className="mt-1 text-muted-foreground">Built only from what's already in your bags.</p>
       <ul className="mt-4 grid gap-4 sm:grid-cols-2">

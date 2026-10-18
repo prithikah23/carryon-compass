@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 export function TopNav() {
   const s = usePackingState();
   return (
-    <header className="border-b bg-card">
+    <header className="craft-nav bg-card">
       <div className="mx-auto flex min-h-20 max-w-6xl items-center justify-between gap-3 px-5">
         <Link
           to="/"

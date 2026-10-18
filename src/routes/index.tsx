@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Compass, Gift, Layers, Luggage, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { meta } from "@/components/FitControls";
+import { BoardingPass } from "@/components/BoardingPass";
 import { AIRLINES, freshSample } from "@/lib/packing";
 import { savePackingTrip } from "@/lib/packing-store";
 export const Route = createFileRoute("/")({
@@ -15,16 +16,16 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <div className="mx-auto max-w-6xl px-5">
-      <section className="home-travel relative flex min-h-[590px] flex-col justify-center overflow-hidden py-14">
-        <div className="relative z-10 max-w-2xl lg:max-w-[58%]">
-          <p className="mb-5 flex items-center gap-2 font-medium text-primary">
+      <section className="home-travel relative">
+        <div className="relative z-10">
+          <p className="ticket-label mb-5 flex items-center gap-2 text-primary">
             <Compass className="size-5" aria-hidden />
             TWO BAGS. EVERY CLIMATE.
           </p>
-          <h1 className="max-w-xl text-5xl font-semibold leading-tight sm:text-6xl">
-            Will it all fit in your carry-on?
+          <h1 className="home-heading font-semibold">
+            Will it all fit in your <em>carry-on?</em>
           </h1>
-          <p className="mt-6 max-w-lg text-xl leading-relaxed text-muted-foreground">
+          <p className="home-intro mt-5 text-lg leading-relaxed text-muted-foreground">
             Tell us where you're going and what bags you have. Get a packing list that fits, with
             room to bring things home.
           </p>
@@ -47,20 +48,7 @@ function Home() {
             Born from a trip to Buenos Aires, the Atacama, and Patagonia with just a carry-on.
           </p>
         </div>
-        <svg
-          className="travel-bags pointer-events-none absolute bottom-5 right-4 hidden h-72 w-60 text-primary/20 sm:block lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-[460px] lg:w-[395px] lg:-translate-y-1/2 lg:text-primary/65"
-          viewBox="0 0 240 280"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          aria-label="Carry-on suitcase and personal backpack"
-          role="img"
-        >
-          <rect x="35" y="50" width="125" height="195" rx="10" />
-          <path d="M65 50V22h65v28M65 80v125m30-125v125m30-125v125M53 245v15m90-15v15" />
-          <rect x="130" y="138" width="95" height="110" rx="20" />
-          <path d="M156 138v-12h42v12m-45 35h48v50h-48z" />
-        </svg>
+        <BoardingPass />
       </section>
       <section aria-labelledby="why" className="border-t py-12">
         <h2 id="why" className="mb-8 text-3xl font-semibold">
@@ -103,7 +91,7 @@ function Home() {
               <Link
                 to="/trips/new"
                 search={{ airline: a.name }}
-                className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-ring"
+                className="airline-tag grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-card px-4 py-4 transition-all hover:border-primary focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <span className="flex min-w-0 items-center gap-2 font-medium">
                   <Plane className="size-4 shrink-0 text-accent" aria-hidden />

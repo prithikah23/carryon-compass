@@ -94,7 +94,7 @@ function Builder() {
       </p>
     ) : null;
   return (
-    <div className="mx-auto max-w-3xl px-5 py-10">
+    <div className="craft-setup mx-auto max-w-3xl px-5 py-10">
       <p className="mb-2 font-medium text-primary">YOUR NEXT ADVENTURE</p>
       <h1 className="text-4xl font-semibold">Plan my trip</h1>
       <form onSubmit={submit} noValidate className="mt-8 space-y-8">
