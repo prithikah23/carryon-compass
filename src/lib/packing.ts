@@ -189,9 +189,10 @@ export function buildPackingTrip(input: Omit<PackingTrip, "entries">): PackingTr
   const add = (name: string, reason: string, count = 1, essential = false, impact = 1) => {
     const item = TRAVEL_CATALOG.find((i) => i.name === name);
     if (!item) return;
+    const offset = entries.filter((e) => e.item.name === name).length;
     for (let n = 0; n < count; n++)
       entries.push({
-        item: { ...item, id: `${input.id}-${item.catalogId}-${n}` },
+        item: { ...item, id: `${input.id}-${item.catalogId}-${offset + n}` },
         bag: "carryOn",
         reason,
         packed: false,

@@ -9,6 +9,7 @@ import {
   outfitIdeas,
   changeLaundry,
   suggestedFixes,
+  laundryDifference,
   type LaundryOption,
 } from "@/lib/packing";
 describe("Fresh packing journey rules", () => {
@@ -130,7 +131,7 @@ describe("Fresh packing journey rules", () => {
   });
   const count = (trip: ReturnType<typeof freshSample>, name: string) => trip.entries.filter((e) => e.item.name === name).length;
   it.each([
-    ["No washing", 14, 6, 3],
+    ["No washing", 20, 20, 7],
     ["Quick sink wash", 5, 4, 2],
     ["Laundry available", 7, 4, 2],
   ] as const)("applies %s carry-on caps", (laundry, basics, tops, bottoms) => {
@@ -146,14 +147,58 @@ describe("Fresh packing journey rules", () => {
     const trip = buildPackingTrip({ ...sample, laundry, stops: [{ ...sample.stops[0], id: "short", name: "Paris", days: 2, climate: "Mild", rain: "none", coldNights: false, activities: ["city"] }] });
     expect(count(trip, "Underwear")).toBe(2);
     expect(count(trip, "Socks")).toBe(2);
-    expect(trip.entries.filter((e) => e.item.category === "top")).toHaveLength(1);
+    expect(trip.entries.filter((e) => e.item.category === "top")).toHaveLength(laundry === "No washing" ? 2 : 1);
     expect(trip.entries.filter((e) => e.item.category === "bottom")).toHaveLength(2);
   });
   it("packs one daily basic without washing for eleven days", () => {
     const trip = buildPackingTrip({ ...freshSample(), laundry: "No washing" });
     expect(count(trip, "Underwear")).toBe(11);
     expect(count(trip, "Socks")).toBe(11);
-    expect(trip.entries.filter((e) => e.item.category === "top")).toHaveLength(6);
+    expect(trip.entries.filter((e) => e.item.category === "top")).toHaveLength(11);
+  });
+  it("packs four bottoms and three sleepwear sets for eleven no-washing days", () => {
+    const trip = buildPackingTrip({ ...freshSample(), laundry: "No washing" });
+    expect(trip.entries.filter((e) => e.item.category === "bottom")).toHaveLength(4);
+    expect(count(trip, "Sleepwear")).toBe(3);
+    expect(new Set(trip.entries.map((e) => e.item.id)).size).toBe(trip.entries.length);
+  });
+  it("uses minimum two bottoms and one sleepwear set for one day", () => {
+    const sample = freshSample();
+    const stop = sample.stops[0];
+    if (!stop) throw new Error("Expected a sample stop");
+    const trip = buildPackingTrip({ ...sample, laundry: "No washing", stops: [{ ...stop, days: 1 }] });
+    expect(trip.entries.filter((e) => e.item.category === "bottom")).toHaveLength(2);
+    expect(count(trip, "Sleepwear")).toBe(1);
+  });
+  it("counts hiking clothes within the same eleven daily tops and four bottoms", () => {
+    const sample = freshSample();
+    const trip = buildPackingTrip({ ...sample, laundry: "No washing", stops: sample.stops.map((s) => ({ ...s, activities: ["hiking"] })) });
+    expect(trip.entries.filter((e) => e.item.category === "top")).toHaveLength(11);
+    expect(trip.entries.filter((e) => e.item.category === "bottom")).toHaveLength(4);
+    expect(count(trip, "Hiking pants")).toBe(1);
+  });
+  it("keeps layers shoes and accessories unchanged across laundry options", () => {
+    const quick = freshSample();
+    const no = changeLaundry(quick, "No washing");
+    const fixed = (trip: typeof quick) => trip.entries.filter((e) => ["outer", "shoes", "accessory"].includes(e.item.category));
+    expect(fixed(no)).toEqual(fixed(quick));
+  });
+  it("calculates the extra clothing and weight against sink washing including sleepwear", () => {
+    const no = changeLaundry(freshSample(), "No washing");
+    const quick = changeLaundry(no, "Quick sink wash");
+    const difference = laundryDifference(no);
+    expect(difference.items).toBe(22);
+    expect(difference.weightG).toBe(no.entries.reduce((s, e) => s + e.item.weightG, 0) - quick.entries.reduce((s, e) => s + e.item.weightG, 0));
+    expect(count(no, "Sleepwear") - count(quick, "Sleepwear")).toBe(1);
+  });
+  it("reports 1.2 kg over and offers feasible plane wear ranked with the other fixes", () => {
+    const trip = changeLaundry(freshSample(), "No washing");
+    trip.entries = trip.entries.map((e) => e.bag === "worn" ? { ...e, bag: "carryOn" } : e);
+    trip.limitKg = (totals(trip).usedG + 1000 - 1200) / 1000;
+    expect(totals(trip).overG).toBeCloseTo(1200);
+    const fixes = suggestedFixes(trip);
+    expect(fixes.some((f) => f.kind === "wear" && f.savedG === 650)).toBe(true);
+    expect(fixes.map((f) => f.savedG)).toEqual(fixes.map((f) => f.savedG).sort((a, b) => b - a));
   });
   it("updates real weight, volume, outfits and preserves worn and packed edits on laundry changes", () => {
     const trip = buildPackingTrip({ ...freshSample(), laundry: "No washing" });
