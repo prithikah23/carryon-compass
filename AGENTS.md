@@ -12,6 +12,7 @@
 # Project rules
 
 - Travel-ticket styling is shared through semantic CSS tokens and scoped page classes; the home boarding pass derives its sample figures from the existing packing module, keeping decorative statistics honest.
+- Destination stamps share a presentational component using real stop names, durations and activity icons; stamp ink and luggage-tag styling use global semantic tokens so travel decoration stays separate from packing rules.
 - Active app data lives in browser localStorage via `src/lib/packing-store.ts` (try/catch, fallback to memory); a new versioned key isolates the fresh brief from prior app data.
 - Store is read only after hydration (useSyncExternalStore with an "unloaded" server snapshot); pages render a skeleton until loaded. Why: avoids SSR hydration mismatches.
 - Packing selection, bag assignment, totals and removal suggestions live in the pure `src/lib/packing.ts` module; UI does not duplicate rules.

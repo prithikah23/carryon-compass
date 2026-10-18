@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { freshSample, totals } from "@/lib/packing";
 import { savePackingTrip } from "@/lib/packing-store";
 import { fmtWeight, fmtVolume } from "@/lib/format";
+import { DestinationStamp } from "@/components/DestinationStamp";
 
 export function BoardingPass() {
   const [returning, setReturning] = useState(false);
@@ -22,9 +23,8 @@ export function BoardingPass() {
         <div className="pass-route" aria-label="Buenos Aires to Atacama to Patagonia to Santiago">
           {trip.stops.map((stop, i) => {
             const code = ["BA", "ATC", "PAT", "SCL"][i] ?? stop.name.slice(0, 3).toUpperCase();
-            const name = stop.name;
             return (
-            <div key={code} className="relative min-w-0"><span className="block font-display text-3xl font-semibold sm:text-4xl">{code}</span><span className="mt-1 block text-sm text-muted-foreground">{name}</span>{i < 3 && <span className="route-dash" aria-hidden>→</span>}</div>
+            <div key={code} className="relative min-w-0"><DestinationStamp stop={stop} index={i} code={code} />{i < 3 && <span className="route-dash" aria-hidden>→</span>}</div>
             );
           })}
         </div>

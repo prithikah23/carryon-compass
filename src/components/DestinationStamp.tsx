@@ -2,7 +2,7 @@ import { Mountain, Sun, Waves, Building2, Plane } from "lucide-react";
 import type { Stop } from "@/lib/packing";
 
 export function DestinationStamp({ stop, index, code }: { stop: Stop; index: number; code?: string }) {
-  const Icon = stop.activities.includes("hiking") ? Mountain : stop.activities.includes("beach") ? Waves : stop.temp === "Hot" || stop.temp === "Warm" ? Sun : Building2;
+  const Icon = stop.activities.includes("hiking") ? Mountain : stop.activities.includes("beach") ? Waves : stop.climate === "Hot" || stop.climate === "Warm" ? Sun : Building2;
   return <div className="destination-stamp" data-ink={index % 3}>
     <div className="stamp-perforation">
       <span className="stamp-caption">STOP {String(index + 1).padStart(2, "0")}</span>

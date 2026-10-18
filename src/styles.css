@@ -52,6 +52,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-ticket: var(--ticket);
+  --color-stamp-coral: var(--stamp-coral);
+  --color-stamp-forest: var(--stamp-forest);
+  --color-stamp-ocean: var(--stamp-ocean);
   --shadow-craft: 4px 4px 0 var(--craft-shadow);
 }
 
@@ -84,6 +87,9 @@
   --ring: oklch(0.52 0.17 30);
   --ticket: oklch(0.94 0.07 90);
   --craft-shadow: oklch(0.25 0.035 260 / 0.16);
+  --stamp-coral: var(--primary);
+  --stamp-forest: var(--accent);
+  --stamp-ocean: oklch(0.44 0.075 205);
   --chart-1: oklch(0.44 0.075 205);
   --chart-2: oklch(0.6 0.13 45);
   --chart-3: oklch(0.47 0.1 155);
@@ -106,6 +112,19 @@
 .home-heading { max-width: 850px; font-size: 64px; line-height: 1.08; }
 .home-heading em { color: var(--primary); font-style: italic; }
 .home-intro { max-width: 600px; }
+.destination-stamp { --stamp-ink: var(--stamp-coral); min-width: 0; padding: 5px; color: var(--stamp-ink); border: 1.5px dashed currentColor; background: var(--card); transform: rotate(-2deg); }
+.destination-stamp[data-ink='1'] { --stamp-ink: var(--stamp-forest); transform: rotate(2deg); }
+.destination-stamp[data-ink='2'] { --stamp-ink: var(--stamp-ocean); transform: rotate(-1deg); }
+.stamp-perforation { min-height: 166px; border: 2px solid currentColor; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+.stamp-caption, .stamp-duration { font-family: ui-monospace, monospace; font-size: 11px; font-weight: 600; }
+.stamp-landmark { width: 38px; height: 38px; }
+.stamp-code { font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1; }
+.stamp-destination { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.stamp-duration { display: flex; align-items: center; gap: 6px; border-top: 1px solid currentColor; padding-top: 6px; }
+.passport-itinerary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; max-width: 720px; padding: 8px 4px; }
+.passport-itinerary .stamp-perforation { min-height: 148px; }
+.luggage-tag { display: inline-flex; align-items: center; gap: 12px; border: 1.5px solid var(--foreground); background: var(--ticket); padding: 10px 16px 10px 12px; box-shadow: 2px 2px 0 var(--craft-shadow); transform: rotate(-2deg); }
+.luggage-tag::before { content: ''; width: 10px; height: 10px; border: 1.5px solid var(--foreground); border-radius: 50%; background: var(--background); flex-shrink: 0; }
 .boarding-pass { display: grid; grid-template-columns: minmax(0,1fr) 270px; margin-top: 36px; border: 2px solid var(--foreground); border-radius: 8px; background: var(--card); box-shadow: var(--shadow-craft); overflow: hidden; }
 .pass-main { padding: 24px 28px; }
 .pass-route { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 24px; padding: 28px 0; }
@@ -133,6 +152,8 @@
 .craft-outfits > ul > li { border: 1.5px solid var(--foreground); border-radius: 8px; box-shadow: 3px 3px 0 var(--craft-shadow); }
 @media (max-width: 639px) {
   .home-travel { padding-top: 32px; }
+  .passport-itinerary { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+  .stamp-perforation { min-height: 164px; }
   .home-heading { font-size: 42px; }
   .boarding-pass { grid-template-columns: minmax(0,1fr); margin-top: 28px; }
   .pass-main { padding: 20px 16px; }

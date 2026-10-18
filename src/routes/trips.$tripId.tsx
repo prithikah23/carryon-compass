@@ -46,6 +46,7 @@ import { CATEGORIES, bagLabel, type Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AddPackingItem } from "@/components/AddPackingItem";
 import { ItemMeasurements } from "@/components/ItemMeasurements";
+import { DestinationStamp } from "@/components/DestinationStamp";
 import { editItemMeasurement } from "@/lib/travel-items";
 export const Route = createFileRoute("/trips/$tripId")({
   head: () =>
@@ -185,6 +186,9 @@ function Plan({ trip }: { trip: PackingTrip }) {
         </Button>
       </div>
       <div className="mb-7">
+        <div className="passport-itinerary mb-6" aria-label="Trip destinations">
+          {trip.stops.map((stop, index) => <DestinationStamp key={stop.id} stop={stop} index={index} />)}
+        </div>
         <Chips label="Can you do laundry on this trip?" options={LAUNDRY_OPTIONS} value={trip.laundry ?? "Quick sink wash"} onChange={(laundry) => savePackingTrip(changeLaundry(trip, laundry))} />
       </div>
       <section
