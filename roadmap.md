@@ -1,7 +1,7 @@
 # Roadmap — fresh "Will everything fit?" brief
 
-- [ ] Complete full-catalog quick-add matching and plural handling without changing the design
-- [ ] Recheck four requested additions, editable estimates, instant meters and saved suggestions
+- [x] Complete full-catalog quick-add matching and plural handling without changing the design
+- [x] Recheck four requested additions, editable estimates, instant meters and saved suggestions
 - [x] Update uncapped no-washing clothing quantities, matching reasons and comparison note
 - [x] Verify ranked fixes and instant laundry updates with tests and the live app
 - [x] Apply Playful Neo-Craft styling across all three pages and add an interactive, data-derived boarding pass
