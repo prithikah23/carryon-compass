@@ -15,6 +15,11 @@ describe('Effortless travel additions', () => {
   it('finds camera with a sensible weight', () => {
     expect(searchTravelItems('camera')[0]?.weightG).toBe(600);
   });
+  it('searches the full catalog and handles common es plurals', () => {
+    expect(searchTravelItems('polo shirts').some((item) => item.name === 'Polo shirt')).toBe(true);
+    expect(searchTravelItems('toothbrushes').some((item) => item.name === 'Toothbrush')).toBe(true);
+    expect(searchTravelItems('lunch boxes').some((item) => item.name === 'Lunch box')).toBe(true);
+  });
   it('matches earbuds and headphone synonyms', () => {
     expect(searchTravelItems('earbuds').map((i) => i.name)).toContain('Headphones');
     expect(searchTravelItems('headphones').map((i) => i.name)).toContain('Earbuds');
@@ -34,6 +39,21 @@ describe('Effortless travel additions', () => {
     if (!camera) throw new Error('Missing camera');
     expect(pickAddedItemBag(trip, camera)).toBe('personal');
     expect(pickAddedItemBag({ ...trip, personalL: 0 }, camera)).toBe('carryOn');
+  });
+  it('adds the four requested items with their estimated weight and volume reflected in totals', () => {
+    let trip = freshSample();
+    const cases: [string, number, number][] = [['hair dryer', 600, 1.8], ['camera', 600, 1], ['earbuds', 60, 0.1], ["grandma's gift", 500, 1.5]];
+    for (const [query, weightG, volumeL] of cases) {
+      const item = query === "grandma's gift" ? createCustomItem(query, 'Other') : searchTravelItems(query)[0];
+      if (!item) throw new Error(`Missing ${query}`);
+      expect(item.weightG).toBe(weightG);
+      expect(item.volumeL).toBe(volumeL);
+      const before = totals(trip);
+      trip = { ...trip, entries: [...trip.entries, { item, bag: pickAddedItemBag(trip, item), reason: 'Chosen for this trip', packed: false, essential: false, impact: 0 }] };
+      const after = totals(trip);
+      expect(after.usedG - before.usedG).toBe(weightG);
+      expect(after.bags.carryOn.l + after.bags.personal.l - before.bags.carryOn.l - before.bags.personal.l).toBeCloseTo(volumeL);
+    }
   });
   it('updates totals and sources for measured values without affecting other entries', () => {
     const trip = freshSample();
