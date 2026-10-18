@@ -1,5 +1,7 @@
 # Roadmap — fresh "Will everything fit?" brief
 
+- [ ] Apply Playful Neo-Craft styling across all three pages and add an interactive, data-derived boarding pass
+- [ ] Verify packing interactions and desktop/375px layouts after the visual refresh
 - [x] Replace prior screens with Home, one-page setup and packing plan
 - [x] Fresh browser storage, 40-item catalog and deterministic packing rules
 - [x] Meters, souvenir direction toggle, packing actions, search and custom items
