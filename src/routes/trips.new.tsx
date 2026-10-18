@@ -214,7 +214,7 @@ function Builder() {
                 <option value="">Other / I'll set it myself</option>
                 {AIRLINES.map((a) => (
                   <option key={a.name} value={a.name}>
-                    {a.name} · {a.limitKg === null ? "No weight limit" : `${a.limitKg} kg`}
+                    {a.name} · {a.limitKg === null ? "No weight limit" : `${a.limitKg} kg${a.paidCabinBag ? " with paid cabin bag" : ""}`}
                   </option>
                 ))}
               </select>
@@ -222,24 +222,19 @@ function Builder() {
                 {AIRLINES.find((x) => x.name === airline)?.note ??
                   "Pick an airline to fill in its typical bag sizes and weight limit. You can still change them."}
               </p>
+              {preset && airline === preset.name && <p className="mt-2 text-muted-foreground">Filled in from {preset.name}. You can change any of these.</p>}
             </div>
             <Chips
               label="Carry-on"
-              options={["Small 30 L", "Standard 40 L", "Large 45 L"]}
-              value={carry === 30 ? "Small 30 L" : carry === 40 ? "Standard 40 L" : "Large 45 L"}
-              onChange={(v) => setCarry(v.includes("30") ? 30 : v.includes("40") ? 40 : 45)}
+              options={[...new Set([30, 40, 45, carry])].sort((a, b) => a - b).map((litres) => `${litres} L`)}
+              value={`${carry} L`}
+              onChange={(v) => setCarry(Number.parseFloat(v))}
             />
             <Chips
               label="Personal item"
-              options={["Small tote 12 L", "Backpack 18 L", "Large backpack 25 L"]}
-              value={
-                personal === 12
-                  ? "Small tote 12 L"
-                  : personal === 18
-                    ? "Backpack 18 L"
-                    : "Large backpack 25 L"
-              }
-              onChange={(v) => setPersonal(v.includes("12") ? 12 : v.includes("18") ? 18 : 25)}
+              options={[...new Set([12, 18, 25, personal])].sort((a, b) => a - b).map((litres) => `${litres} L`)}
+              value={`${personal} L`}
+              onChange={(v) => setPersonal(Number.parseFloat(v))}
             />
             <div className="flex items-center gap-3">
               <div className="flex size-11 shrink-0 items-center justify-center"><Checkbox id="weight-check" checked={!weightCheck} onCheckedChange={(v) => setWeightCheck(v !== true)} className="relative size-5 shadow-none after:absolute after:-inset-3 after:content-[''] [&_svg]:size-4" /></div>

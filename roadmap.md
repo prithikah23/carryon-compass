@@ -1,5 +1,7 @@
 # Roadmap — fresh "Will everything fit?" brief
 
+- [x] Expand airline cards in place with accessible controls and explicit planning links
+- [x] Clarify prefilled setup and paid cabin allowances; verify navigation and values
 - [x] Complete full-catalog quick-add matching and plural handling without changing the design
 - [x] Recheck four requested additions, editable estimates, instant meters and saved suggestions
 - [x] Update uncapped no-washing clothing quantities, matching reasons and comparison note

@@ -154,24 +154,27 @@ export function findItems(q: string) {
 }
 export type AirlinePreset = {
   name: string;
-  carryOnL: 30 | 40 | 45;
-  personalL: 12 | 18 | 25;
+  carryOnL: number;
+  personalL: number;
+  carryOnSize: string;
+  personalSize: string;
+  paidCabinBag?: boolean;
   limitKg: number | null;
   note: string;
 };
 /** Typical cabin allowances (economy). Estimates only — airlines change rules. */
 export const AIRLINES: AirlinePreset[] = [
-  { name: "Air Canada", carryOnL: 40, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit; you must lift the bag unaided. Fare and route restrictions apply; check yours." },
-  { name: "Delta", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
-  { name: "American Airlines", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
-  { name: "United", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
-  { name: "British Airways", carryOnL: 45, personalL: 18, limitKg: 23, note: "Up to 23 kg per bag; you still have to lift it into the overhead bin." },
-  { name: "Lufthansa", carryOnL: 40, personalL: 12, limitKg: 8, note: "8 kg for the carry-on in economy, often weighed at the gate." },
-  { name: "Qatar Airways", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg combined in economy, often weighed at check-in." },
-  { name: "Emirates", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg in economy, often weighed at check-in." },
-  { name: "Singapore Airlines", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg in economy, often weighed at check-in." },
-  { name: "Ryanair", carryOnL: 40, personalL: 12, limitKg: 10, note: "10 kg carry-on with Priority; the free bag is a small 40×20×25 cm item." },
-  { name: "easyJet", carryOnL: 40, personalL: 12, limitKg: 15, note: "Large cabin bag up to 15 kg with Up Front or Plus; free bag is under-seat only." },
+  { name: "Air Canada", carryOnSize: "55 × 40 × 23 cm", personalSize: "43 × 33 × 16 cm", carryOnL: 40, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit; you must lift the bag unaided. Fare and route restrictions apply; check yours." },
+  { name: "Delta", carryOnSize: "56 × 35 × 23 cm", personalSize: "No fixed cm limit; must fit under the seat", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
+  { name: "American Airlines", carryOnSize: "56 × 36 × 23 cm", personalSize: "45 × 35 × 20 cm", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
+  { name: "United", carryOnSize: "56 × 35 × 23 cm", personalSize: "43 × 25 × 22 cm", carryOnL: 45, personalL: 18, limitKg: null, note: "Usually no carry-on weight limit. Route exceptions and fare restrictions may apply; check yours." },
+  { name: "British Airways", carryOnSize: "56 × 45 × 25 cm", personalSize: "40 × 30 × 15 cm", carryOnL: 45, personalL: 18, limitKg: 23, note: "Up to 23 kg per bag; you still have to lift it into the overhead bin." },
+  { name: "Lufthansa", carryOnSize: "55 × 40 × 23 cm", personalSize: "40 × 30 × 10 cm", carryOnL: 40, personalL: 12, limitKg: 8, note: "8 kg for the carry-on in economy, often weighed at the gate." },
+  { name: "Qatar Airways", carryOnSize: "50 × 37 × 25 cm", personalSize: "No fixed cm limit for a small handbag; check yours", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg combined in economy, often weighed at check-in." },
+  { name: "Emirates", carryOnSize: "55 × 38 × 22 cm", personalSize: "No separate personal-bag cm allowance guaranteed", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg in economy, often weighed at check-in." },
+  { name: "Singapore Airlines", carryOnSize: "Total dimensions up to 115 cm", personalSize: "40 × 30 × 10 cm", carryOnL: 40, personalL: 12, limitKg: 7, note: "7 kg in economy, often weighed at check-in." },
+  { name: "Ryanair", carryOnSize: "55 × 40 × 20 cm", personalSize: "40 × 30 × 20 cm", carryOnL: 40, personalL: 24, limitKg: 10, paidCabinBag: true, note: "10 kg with paid cabin bag. Free under-seat bag: 40 × 30 × 20 cm. Check your fare." },
+  { name: "easyJet", carryOnSize: "56 × 45 × 25 cm", personalSize: "45 × 36 × 20 cm", carryOnL: 40, personalL: 32, limitKg: 15, paidCabinBag: true, note: "15 kg with paid cabin bag. Free under-seat bag: 45 × 36 × 20 cm (also up to 15 kg). Check your fare." },
 ];
 export const souvenirVolume = (kg: number) => kg * 4;
 /** Prefer essentials/tech near you, respect reserved space, and keep copies together. */

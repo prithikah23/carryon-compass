@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Compass, Gift, Layers, Luggage, Plane } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, ChevronDown, Compass, Gift, Layers, Luggage, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { meta } from "@/components/FitControls";
 import { BoardingPass } from "@/components/BoardingPass";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 function Home() {
+  const [openAirline, setOpenAirline] = useState<string | null>(null);
   return (
     <div className="mx-auto max-w-6xl px-5">
       <section className="home-travel relative">
@@ -64,7 +66,7 @@ function Home() {
             {
               Icon: Plane,
               title: "Typical airline limits",
-              text: "Pick an airline to fill in typical bag sizes and weight limits. Rules change, so check yours.",
+              text: "Tap an airline to see its typical bag sizes. Rules change, so check yours.",
             },
             {
               Icon: Gift,
@@ -83,22 +85,36 @@ function Home() {
       <section aria-labelledby="airlines" className="border-t py-12">
         <h2 id="airlines" className="text-3xl font-semibold">Pick your airline</h2>
         <p className="mt-2 text-muted-foreground">
-          Bag sizes and weight limits fill in for you. Typical economy rules, check yours.
+          Tap an airline to see its typical bag sizes. Rules change, so check yours.
         </p>
         <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {AIRLINES.map((a) => (
-            <li key={a.name}>
-              <Link
-                to="/trips/new"
-                search={{ airline: a.name }}
-                className="airline-tag grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-card px-4 py-4 transition-all hover:border-primary focus-visible:outline-2 focus-visible:outline-ring"
+          {AIRLINES.map((a, index) => (
+            <li key={a.name} className="airline-tag self-start overflow-hidden bg-card">
+              <Button
+                variant="ghost"
+                aria-expanded={openAirline === a.name}
+                aria-controls={`airline-details-${index}`}
+                onClick={() => setOpenAirline((current) => current === a.name ? null : a.name)}
+                className="h-auto min-h-11 w-full justify-between gap-3 whitespace-normal px-4 py-4 text-left font-normal"
               >
                 <span className="flex min-w-0 items-center gap-2 font-medium">
                   <Plane className="size-4 shrink-0 text-accent" aria-hidden />
                   {a.name}
                 </span>
-                <span className="text-muted-foreground">{a.limitKg === null ? "No weight limit" : `${a.limitKg} kg`}</span>
-              </Link>
+                <ChevronDown className={`size-4 shrink-0 transition-transform motion-reduce:transition-none ${openAirline === a.name ? "rotate-180" : ""}`} aria-hidden />
+              </Button>
+              <div id={`airline-details-${index}`} hidden={openAirline !== a.name} className="border-t px-4 pb-4 pt-3">
+                <dl className="space-y-3">
+                  <div><dt className="font-medium">Carry-on{a.paidCabinBag ? " · paid cabin bag" : ""}</dt><dd className="text-muted-foreground">{a.carryOnSize} · {a.carryOnL} L</dd></div>
+                  <div><dt className="font-medium">Personal item{a.paidCabinBag ? " · free under-seat bag" : ""}</dt><dd className="text-muted-foreground">{a.personalSize} · {a.personalL} L</dd></div>
+                  <div><dt className="font-medium">Weight limit</dt><dd className="text-muted-foreground">{a.limitKg === null ? "No weight limit" : `${a.limitKg} kg${a.paidCabinBag ? " with paid cabin bag" : ""}`}</dd></div>
+                </dl>
+                <p className="mt-3 text-muted-foreground">Typical economy rules. Check your airline before you fly.</p>
+                <p className="mt-2 text-muted-foreground">Litres are packing estimates, not a guarantee of size or fare eligibility.</p>
+                <Button asChild className="mt-4 h-auto min-h-11 w-full whitespace-normal">
+                  <Link to="/trips/new" search={{ airline: a.name }}>Plan a trip with {a.name}<ArrowRight className="shrink-0" aria-hidden /></Link>
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

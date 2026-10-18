@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { AIRLINES, findItems, freshSample, totals, suggestedRemovals } from "@/lib/packing";
 describe("airline presets and new catalog items", () => {
+  it("Ryanair uses the free under-seat bag and a paid 10 kg cabin allowance", () => {
+    const airline = AIRLINES.find((a) => a.name === "Ryanair");
+    expect(airline?.personalSize).toBe("40 × 30 × 20 cm");
+    expect(airline?.personalL).toBe(24);
+    expect(airline?.limitKg).toBe(10);
+    expect(airline?.paidCabinBag).toBe(true);
+  });
+  it("easyJet uses the free under-seat bag and a paid 15 kg cabin allowance", () => {
+    const airline = AIRLINES.find((a) => a.name === "easyJet");
+    expect(airline?.personalSize).toBe("45 × 36 × 20 cm");
+    expect(airline?.personalL).toBe(32);
+    expect(airline?.limitKg).toBe(15);
+    expect(airline?.paidCabinBag).toBe(true);
+  });
   it("Qatar Airways sets a 7 kg limit", () => {
     expect(AIRLINES.find((a) => a.name === "Qatar Airways")?.limitKg).toBe(7);
   });
