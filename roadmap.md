@@ -1,5 +1,7 @@
 # Roadmap — fresh "Will everything fit?" brief
 
+- [x] Add passport-style destination stamps and luggage-tag details without changing packing controls
+- [x] Verify travel details and existing interactions on desktop and phone layouts
 - [x] Expand airline cards in place with accessible controls and explicit planning links
 - [x] Clarify prefilled setup and paid cabin allowances; verify navigation and values
 - [x] Complete full-catalog quick-add matching and plural handling without changing the design
