@@ -10,18 +10,23 @@ export function BoardingPass() {
   const [returning, setReturning] = useState(false);
   const trip = freshSample();
   const t = totals(trip, returning);
+  const days = trip.stops.reduce((sum, stop) => sum + stop.days, 0);
   const fits = !t.overG && !t.overCarryL && !t.overPersonalL;
   return (
     <div className="boarding-pass">
       <div className="pass-main">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed pb-4">
           <span className="ticket-label flex items-center gap-2"><Plane className="size-5" aria-hidden /> SAMPLE TRIP / MULTI-CLIMATE</span>
-          <span className="ticket-label">11 DAYS · 2 BAGS</span>
+          <span className="ticket-label">{days} DAYS · 2 BAGS</span>
         </div>
         <div className="pass-route" aria-label="Buenos Aires to Atacama to Patagonia to Santiago">
-          {[["EZE", "Buenos Aires"], ["ATA", "Atacama"], ["PAT", "Patagonia"], ["SCL", "Santiago"]].map(([code, name], i) => (
+          {trip.stops.map((stop, i) => {
+            const code = ["BA", "ATC", "PAT", "SCL"][i] ?? stop.name.slice(0, 3).toUpperCase();
+            const name = stop.name;
+            return (
             <div key={code} className="relative min-w-0"><span className="block font-display text-3xl font-semibold sm:text-4xl">{code}</span><span className="mt-1 block text-sm text-muted-foreground">{name}</span>{i < 3 && <span className="route-dash" aria-hidden>→</span>}</div>
-          ))}
+            );
+          })}
         </div>
         <div className="grid gap-4 border-t border-dashed pt-4 sm:grid-cols-3">
           <div><p className="ticket-label text-muted-foreground">CARRY-ON</p><p className="mt-1 font-semibold">{fmtVolume(trip.carryOnL)}</p></div>
