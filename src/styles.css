@@ -160,7 +160,8 @@
   .pass-route { gap: 16px; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 20px 0; }
   .pass-main > .grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
   .pass-stub { border-left: 0; border-top: 2px dashed var(--foreground); padding: 16px; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; gap: 16px; }
-  .pass-stub > a { grid-column: 2; }
+  .pass-stub > a { grid-column: 2; min-width: 0; height: auto; white-space: normal; gap: 6px; }
+  .pass-stub > a svg { flex-shrink: 0; }
   .pass-stamp { padding: 8px; font-size: .875rem; }
   .craft-nav a:first-child { font-size: 16px; gap: 6px; }
   .craft-nav a:first-child > svg { width: 30px; height: 30px; }
