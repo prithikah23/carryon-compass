@@ -111,10 +111,20 @@ export const COMMON_TRAVEL_ITEMS: Item[] = estimates.map(([name, category, weigh
   color: TRAVEL_CATALOG[0]?.color ?? '', warmth: 'light', formality: 'casual', suitable: ['city'], maxWears: 99,
 }));
 const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-const singular = (word: string) => word.endsWith('ies') ? `${word.slice(0, -3)}y` : word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
+const singular = (word: string) => word.endsWith('ies') ? `${word.slice(0, -3)}y` : /(?:ches|shes|xes|zes|sses)$/.test(word) ? word.slice(0, -2) : word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
+const catalogItems: Item[] = CATALOG.map((item) => ({ ...item, id: item.catalogId }));
+const extraAliases: Record<string, string> = {
+  'Hair straightener': 'straightener flat iron',
+  'Neck pillow': 'pillow travel pillow',
+  Swimwear: 'swimsuit bathing suit',
+  'Travel adapter': 'universal adapter',
+  'Makeup bag': 'cosmetics beauty',
+  'Jewelry case': 'jewellery jewelry earrings necklace',
+  'Contact lenses': 'contacts lenses eyes',
+};
 export function searchTravelItems(query: string, saved: Item[] = []): Item[] {
   const unique = new Map<string, Item>();
-  for (const item of [...saved, ...TRAVEL_CATALOG, ...COMMON_TRAVEL_ITEMS]) {
+  for (const item of [...saved, ...TRAVEL_CATALOG, ...COMMON_TRAVEL_ITEMS, ...catalogItems]) {
     const key = normalize(item.name);
     if (!unique.has(key)) unique.set(key, item);
   }
@@ -122,8 +132,7 @@ export function searchTravelItems(query: string, saved: Item[] = []): Item[] {
   return [...unique.values()].filter((item) => {
     const aliases = estimates.find(([name]) => name === item.name)?.[4] ?? '';
     const catalog = CATALOG.find((e) => e.catalogId === item.catalogId)?.synonyms ?? '';
-    const special: Record<string, string> = { 'Hair straightener': 'straightener flat iron', 'Neck pillow': 'pillow travel pillow', Swimwear: 'swimsuit bathing suit', 'Travel adapter': 'universal adapter', 'Makeup bag': 'cosmetics beauty' };
-    const haystack = normalize(`${item.name} ${aliases} ${catalog} ${special[item.name] ?? ''}`).split(' ').map(singular);
+    const haystack = normalize(`${item.name} ${aliases} ${catalog} ${extraAliases[item.name] ?? ''}`).split(' ').map(singular);
     return words.every((word) => haystack.some((candidate) => candidate.includes(word)));
   }).sort((a, b) => Number(normalize(b.name) === normalize(query)) - Number(normalize(a.name) === normalize(query)));
 }
