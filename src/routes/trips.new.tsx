@@ -214,7 +214,7 @@ function Builder() {
                 <option value="">Other / I'll set it myself</option>
                 {AIRLINES.map((a) => (
                   <option key={a.name} value={a.name}>
-                    {a.name} · {a.limitKg === null ? "No weight limit" : `${a.limitKg} kg`}
+                    {a.name} · {a.limitKg === null ? "No weight limit" : `${a.limitKg} kg${a.paidCabinBag ? " with paid cabin bag" : ""}`}
                   </option>
                 ))}
               </select>

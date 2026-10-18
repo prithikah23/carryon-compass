@@ -110,6 +110,7 @@ function Home() {
                   <div><dt className="font-medium">Weight limit</dt><dd className="text-muted-foreground">{a.limitKg === null ? "No weight limit" : `${a.limitKg} kg${a.paidCabinBag ? " with paid cabin bag" : ""}`}</dd></div>
                 </dl>
                 <p className="mt-3 text-muted-foreground">Typical economy rules. Check your airline before you fly.</p>
+                <p className="mt-2 text-muted-foreground">Litres are packing estimates, not a guarantee of size or fare eligibility.</p>
                 <Button asChild className="mt-4 h-auto min-h-11 w-full whitespace-normal">
                   <Link to="/trips/new" search={{ airline: a.name }}>Plan a trip with {a.name}<ArrowRight className="shrink-0" aria-hidden /></Link>
                 </Button>
